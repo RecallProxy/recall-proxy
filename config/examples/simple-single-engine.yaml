@@ -1,0 +1,27 @@
+providers:
+  - id: semantic_local
+    provider_type: semantic
+    enabled: true
+    capabilities:
+      - semantic_search
+    settings:
+      endpoint: http://localhost:6333
+      collection: recall_embeddings
+
+read_pipelines:
+  - id: default
+    providers:
+      - provider_id: semantic_local
+        capability: semantic_search
+        priority: 10
+        weight: 100
+        enabled: true
+
+write_pipelines:
+  - id: response_archive
+    trigger: on_response
+    sinks:
+      - provider_id: semantic_local
+        capability: semantic_search
+        criticality: required
+        enabled: true
