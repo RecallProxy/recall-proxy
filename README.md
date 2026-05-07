@@ -48,6 +48,19 @@ Developing the async "Hindsight" extraction pipeline.
 
 Creating a standard configuration schema for multi-engine orchestration.
 
+## Hindsight Pipeline Design
+
+The asynchronous response-path design for transcript capture, background handoff, worker stages, and replay-safe retries is documented in:
+
+- `docs/architecture/hindsight-flow.md`
+
+Intended implementation targets are outlined in:
+
+- `crates/gateway/src/response/`
+- `crates/core/src/events/`
+- `crates/core/src/memory/`
+- `crates/hindsight-worker/src/`
+
 📜 License
 Distributed under the MIT License.
 
