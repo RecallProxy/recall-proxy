@@ -6,9 +6,14 @@ license = "MIT"
 
 [dependencies]
 async-trait = "0.1"
+axum = "0.7"
 recall-proxy-core = { path = "../core" }
 recall-proxy-config = { path = "../config" }
-tokio = { version = "1", features = ["sync", "macros", "rt"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["sync", "macros", "rt", "net", "signal"] }
+tower-http = { version = "0.5", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread", "time"] }

@@ -65,6 +65,27 @@ worker stages, and replay-safe retries is documented in:
 
 - `docs/architecture/hindsight-flow.md`
 
+## Running the Gateway Server
+
+Start the gateway with:
+
+```bash
+cargo run -p recall-proxy-gateway
+```
+
+The server binds to `127.0.0.1:8080` by default. Override with the `RECALL_PROXY_BIND_ADDRESS` environment variable:
+
+```bash
+RECALL_PROXY_BIND_ADDRESS=0.0.0.0:3000 cargo run -p recall-proxy-gateway
+```
+
+Verify the service is running:
+
+```bash
+curl http://127.0.0.1:8080/health
+# {"status":"ok","service":"recall-proxy-gateway"}
+```
+
 ## Testing
 
 Main flows are covered with unit tests:
