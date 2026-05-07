@@ -75,6 +75,16 @@ The initial Rust workspace now includes `crates/core/src/memory.rs`, which defin
 - `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write
   contracts across semantic, structural, and temporal engines.
 
+🚦 Project Status: Early Implementation
+RecallProxy now includes an initial `crates/hindsight-worker` implementation that models the asynchronous ingest pipeline described above:
+
+- input normalization for raw interaction events
+- extraction orchestration with bounded retries
+- provider fanout across Structural, Semantic, and Temporal memory types
+- terminal success/failure signaling for worker supervision
+
+The project remains in active buildout while the core memory traits and provider integrations evolve.
+
 The gateway response streaming capture contract in `crates/gateway/src/response`
 supports:
 
