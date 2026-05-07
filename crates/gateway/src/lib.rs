@@ -66,23 +66,17 @@ mod tests {
 
     #[tokio::test]
     async fn gateway_runtime_new_stores_config_and_provider() {
-        use recall_proxy_config::ProviderType;
-
         let config = GatewayConfig {
+            bind_address: "0.0.0.0:9000".to_string(),
             providers: vec![ProviderConfig {
-                id: "stub-provider".to_string(),
-                provider_type: ProviderType::Temporal,
-                enabled: true,
-                capabilities: vec![],
-                settings: Default::default(),
+                name: "stub-provider".to_string(),
+                kind: "temporal".to_string(),
             }],
-            read_pipelines: vec![],
-            write_pipelines: vec![],
-            bind_address: String::new(),
         };
 
         let runtime = GatewayRuntime::new(config, StubProvider);
 
+        assert_eq!(runtime.config.bind_address, "0.0.0.0:9000");
         assert_eq!(runtime.config.providers.len(), 1);
         assert_eq!(runtime.provider.metadata().provider_id, "stub");
     }
