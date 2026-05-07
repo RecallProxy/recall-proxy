@@ -23,9 +23,9 @@ The project's mission is to decouple agent logic from specific memory implementa
 
 ## Crate Responsibilities
 
-- `recall-proxy-core`: provider-agnostic memory abstractions and shared domain types.
+- `recall-proxy-core`: provider-agnostic memory abstractions, shared domain types, and engine contracts.
 - `recall-proxy-config`: configuration schema used to wire runtime components.
-- `recall-proxy-gateway`: HTTP/API-facing orchestration entrypoints.
+- `recall-proxy-gateway`: HTTP/API-facing orchestration entrypoints with async ingest and context assembly flows.
 - `recall-proxy-hindsight-worker`: async background processing boundary for hindsight jobs.
 
 ## Public Surface (Initial)
@@ -33,6 +33,7 @@ The project's mission is to decouple agent logic from specific memory implementa
 - `recall-proxy-core`
   - `MemoryRecord`
   - `MemoryProvider`
+  - `StructuralEngine`, `TemporalEngine`, `SemanticEngine`, `HindsightProcessor` (async trait contracts)
 - `recall-proxy-config`
   - `GatewayConfig`
   - `ProviderConfig`
@@ -40,11 +41,15 @@ The project's mission is to decouple agent logic from specific memory implementa
   - `WritePipeline`
 - `recall-proxy-gateway`
   - `GatewayRuntime`
+<<<<<<< HEAD
   - `response::ChunkCapture`
   - `response::ChunkEvent`
   - `response::FinalizedResponse`
   - `response::FinishReason`
   - `response::NonBlockingHandoffOrchestrator`
+=======
+  - `ContextGateway` (async orchestrator with parallel ingest/context assembly)
+>>>>>>> 4d71284 (Implement crate scaffolding: domain types, engine contracts, and async gateway orchestrator)
 - `recall-proxy-hindsight-worker`
   - `HindsightJob`
   - `WorkerRuntime`
@@ -110,7 +115,15 @@ Intended implementation targets are outlined in:
 - `crates/hindsight-worker/src/`
 ## Current Implementation Snapshot
 
-The initial Rust workspace now includes `crates/core/src/memory.rs`, which defines:
+The initial Rust workspace includes:
+- `crates/core/src/memory.rs` — `RawTranscript`, `DerivedFact`, `ProviderWritePayload`, `ProviderWriteBody`
+- `crates/core/src/contracts.rs` — async trait contracts for Structural, Temporal, Semantic, and Hindsight engines
+- `crates/core/src/gateway_types.rs` — `MemoryPayload`, `MemoryQuery`, `ContextSnippet`, `IngestReceipt`, `EngineError`, `MemoryType`
+- `crates/gateway/src/orchestrator.rs` — async `ContextGateway` with parallel ingest routing and context assembly, including unit tests
+
+The scaffold is provider-neutral: concrete engine adapters can be added without changing gateway-level contracts.
+
+## License
 
 - `RawTranscript` for temporal ingest boundaries.
 - `DerivedFact` for extracted structural artifacts.

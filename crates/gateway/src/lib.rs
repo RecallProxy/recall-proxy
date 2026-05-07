@@ -9,10 +9,12 @@
 //! - `context_assembly`: deterministic snippet merging.
 //! - `request`: `ContextEngineProvider`, `ContextAssembler`, orchestration.
 //! - `response`: streaming response capture and handoff orchestration.
+//! - `orchestrator`: async orchestrator with parallel ingest and context assembly.
 
 pub mod context_assembly;
 pub mod request;
 pub mod response;
+pub mod orchestrator;
 
 use recall_proxy_config::GatewayConfig;
 use recall_proxy_core::memory::MemoryProvider;
