@@ -8,7 +8,7 @@ license = "MIT"
 async-trait = "0.1"
 recall-proxy-core = { path = "../core" }
 recall-proxy-config = { path = "../config" }
-
+tokio = { version = "1", features = ["sync", "macros", "rt"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread", "time"] }

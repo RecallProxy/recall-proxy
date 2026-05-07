@@ -5,5 +5,7 @@ version = "0.1.0"
 license = "MIT"
 
 [dependencies]
+async-trait = "0.1"
 recall-proxy-core = { path = "../core" }
 recall-proxy-config = { path = "../config" }
+tokio = { version = "1", features = ["sync", "macros", "rt", "time"] }

@@ -1,8 +1,14 @@
 # RecallProxy
 
+## Universal Context Gateway for LLMs
+
 RecallProxy is an implementation-agnostic context gateway for LLM applications.
-The repository now includes a bootstrap Rust workspace that separates shared
-contracts, runtime orchestration, and background processing concerns.
+The repository includes a Rust workspace that separates shared contracts, runtime
+orchestration, and background processing concerns.
+
+The goal is to decouple agent behavior from memory vendor lock-in so teams can
+evolve from simple stores to richer graph or episodic systems without rewriting
+agent code.
 
 ## Workspace Layout
 
@@ -10,52 +16,47 @@ contracts, runtime orchestration, and background processing concerns.
 .
 ├── Cargo.toml
 ├── crates
-│   ├── config
-│   ├── core
-│   ├── gateway
-│   └── hindsight-worker
+│   ├── config         # Configuration schema
+│   ├── core           # Provider abstractions and domain types
+│   ├── gateway        # Ingest routing and context assembly
+│   └── hindsight-worker  # Async background extraction pipeline
 └── docs
     └── architecture
-        └── repository-layout.md
 ```
 
 ## Crate Responsibilities
 
-- `recall-proxy-core`: provider-agnostic memory abstractions, shared domain types, and engine contracts.
-- `recall-proxy-config`: configuration schema used to wire runtime components.
-- `recall-proxy-gateway`: HTTP/API-facing orchestration entrypoints with async ingest and context assembly flows.
-- `recall-proxy-hindsight-worker`: async background processing boundary for hindsight jobs.
+- **recall-proxy-core**: Provider-agnostic memory abstractions (`ContextEngine` trait,
+  `MemoryRecord`, `MemoryProvider`), shared domain types (`MemoryQuery`, `ContextSnippet`,
+  `MemoryType`), and event delivery contracts.
+- **recall-proxy-config**: Serde-serializable configuration for memory routes
+  and provider wiring (`GatewayConfig`, `MemoryRouteConfig`, `EngineProviderConfig`).
+- **recall-proxy-gateway**: `ContextGateway` (per-engine-type orchestration) and
+  `ContextMemoryGateway` (unified `ContextEngine` trait orchestration) with ingest
+  routing and context assembly.
+- **recall-proxy-hindsight-worker**: `HindsightPipeline` with a background
+  `tokio::mpsc` queue and a pluggable `HindsightExtractor` trait.
 
-## Public Surface (Initial)
+## Architecture Milestones (Initial Implementation)
 
-- `recall-proxy-core`
-  - `MemoryRecord`
-  - `MemoryProvider`
-  - `StructuralEngine`, `TemporalEngine`, `SemanticEngine`, `HindsightProcessor` (async trait contracts)
-- `recall-proxy-config`
-  - `GatewayConfig`
-  - `ProviderConfig`
-- `recall-proxy-gateway`
-  - `GatewayRuntime`
-<<<<<<< HEAD
-  - `response::ChunkCapture`
-  - `response::ChunkEvent`
-  - `response::FinalizedResponse`
-  - `response::FinishReason`
-  - `response::NonBlockingHandoffOrchestrator`
-=======
-  - `ContextGateway` (async orchestrator with parallel ingest/context assembly)
->>>>>>> 4d71284 (Implement crate scaffolding: domain types, engine contracts, and async gateway orchestrator)
-- `recall-proxy-hindsight-worker`
-  - `HindsightJob`
-  - `WorkerRuntime`
+1. **ContextEngine trait system** (`crates/core/src/`)
+   - Async trait for engine providers with typed `write` and `query` operations.
+   - Engine-neutral `MemoryType` enum for semantic, structural, and temporal memory.
 
-## Design Intent
+2. **Async hindsight extraction pipeline** (`crates/hindsight-worker/src/`)
+   - Background queue with `tokio::mpsc`.
+   - Pluggable `HindsightExtractor` trait for converting raw interactions into
+     structural and temporal records without blocking request flow.
 
-The workspace is structured so provider implementations can be added as separate
-crates (for example, `crates/providers/*`) without coupling SDK-specific code to
-the gateway runtime. Runtime crates depend on shared traits from `core` rather
-than directly on provider SDKs.
+3. **Multi-engine orchestration config schema** (`crates/config/src/`)
+   - Serde-serializable configuration for memory routes and provider wiring.
+   - Enables provider swapping via configuration, not gateway refactors.
+
+4. **Gateway orchestration** (`crates/gateway/src/`)
+   - Ingest routing for structural + temporal writes.
+   - Read assembly across registered engine providers.
+   - Two complementary orchestrators: `ContextGateway` (per-engine-type traits)
+     and `ContextMemoryGateway` (unified `ContextEngine` trait).
 
 ## Hindsight Pipeline Design
 
@@ -64,36 +65,23 @@ worker stages, and replay-safe retries is documented in:
 
 - `docs/architecture/hindsight-flow.md`
 
-Intended implementation targets are outlined in:
+## Testing
 
-- `crates/gateway/src/response/`
-- `crates/core/src/events/`
-- `crates/core/src/memory/`
-- `crates/hindsight-worker/src/`
+Main flows are covered with unit tests:
 
-## Current Implementation Snapshot
+```bash
+cargo test
+```
 
-The initial Rust workspace includes:
-- `crates/core/src/memory.rs` — `RawTranscript`, `DerivedFact`, `ProviderWritePayload`, `ProviderWriteBody`
-- `crates/core/src/contracts.rs` — async trait contracts for Structural, Temporal, Semantic, and Hindsight engines
-- `crates/core/src/gateway_types.rs` — `MemoryPayload`, `MemoryQuery`, `ContextSnippet`, `IngestReceipt`, `EngineError`, `MemoryType`
-- `crates/gateway/src/orchestrator.rs` — async `ContextGateway` with parallel ingest routing and context assembly, including unit tests
+- Ingest writes are routed to structural and temporal engines.
+- Read assembly combines context from configured engines.
+- Hindsight pipeline processes interactions in the background.
 
-The scaffold is provider-neutral: concrete engine adapters can be added without changing gateway-level contracts.
+## Project Status
 
-## License
-
-- `RawTranscript` for temporal ingest boundaries.
-- `DerivedFact` for extracted structural artifacts.
-- `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write
-  contracts across semantic, structural, and temporal engines.
-
-The gateway response streaming capture contract in `crates/gateway/src/response`
-supports:
-
-- Chunk capture with sequence validation.
-- Response finalization metadata (finish reason, start and completion times).
-- Non-blocking handoff orchestration for background memory ingestion pipelines.
+Active foundation stage: core abstractions, orchestration scaffolding, and
+test-backed flows are in place. Next iterations can add concrete provider
+adapters and integration tests against simulated endpoints.
 
 ## License
 

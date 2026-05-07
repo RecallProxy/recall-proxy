@@ -5,6 +5,7 @@
 
 pub mod contracts;
 pub mod context;
+pub mod engine;
 pub mod error;
 pub mod events;
 pub mod gateway_types;
