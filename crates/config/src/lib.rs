@@ -142,6 +142,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn gateway_config_default_bind_address() {
+        let config = GatewayConfig {
+            providers: vec![],
+            read_pipelines: vec![],
+            write_pipelines: vec![],
+            bind_address: String::new(),
+        };
+        assert_eq!(default_bind_address(), "127.0.0.1:8080");
+    }
+
+    #[test]
     fn read_candidates_are_sorted_by_priority_then_weight() {
         let config = GatewayConfig {
             providers: vec![],

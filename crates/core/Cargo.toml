@@ -1,7 +1,9 @@
 [package]
-name = "recall_proxy_core"
-version = "0.1.0"
+name = "recall-proxy-core"
 edition = "2021"
+version = "0.1.0"
+license = "MIT"
 
-[lib]
-path = "src/lib.rs"
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }

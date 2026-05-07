@@ -1,10 +1,8 @@
 [package]
-name = "recall_proxy_config"
-version = "0.1.0"
+name = "recall-proxy-config"
 edition = "2021"
-
-[lib]
-path = "src/lib.rs"
+version = "0.1.0"
+license = "MIT"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
