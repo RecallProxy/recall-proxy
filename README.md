@@ -1,49 +1,54 @@
-RecallProxy 🧠
-The Universal Context Gateway for LLMs.
+#RecallProxy 🧠
 
-RecallProxy is a high-performance middleware currently in the conceptual and architectural design phase. It aims to sit between AI Agents and LLM providers to provide a unified abstraction layer for cognitive memory.
+##The Universal Context Gateway for LLMs.
 
-The goal is to allow developers to hot-swap and orchestrate different memory engines—such as Semantic, Temporal, or Structural memory—without changing a single line of agent logic.
+RecallProxy is a high-performance middleware currently in the conceptual and architectural design phase. It sits between your AI Agents and LLM providers to act as a neutral orchestration layer for cognitive memory.
 
-🛠 The Vision
-In the current landscape, memory solutions (Mem0, Cognee, Zep, pgvector) are fragmented and require deep integration with their specific SDKs. RecallProxy is being built to act as a "Neutral Zone" or a "LiteLLM for Memory."
+The project’s mission is to decouple agent logic from specific memory implementations. By moving context management into a dedicated gateway, developers can evolve their memory stack—switching from simple vector stores to complex graph structures—without refactoring their application code.
 
-🔌 Plug-and-Play Architecture
-We want RecallProxy to be engine-agnostic. By using a standardized API, you can define your memory stack in a configuration file. Want to use Mem0 for user preferences but Cognee for complex knowledge graphs? RecallProxy will handle the routing and synthesis, presenting a single "Context-Enriched" prompt to your LLM.
+🏗 The Architecture: Decoupled & Agnostic
+RecallProxy is designed to be implementation-agnostic. It defines high-level "Memory Types" rather than forcing specific "Memory Brands."
 
-⚡ High-Performance Gateway (Rust)
-Choosing Rust ensures that the gateway introduces near-zero latency. By avoiding Garbage Collection (GC) pauses, RecallProxy provides the predictable performance required for real-time agentic workflows.
+1. Unified Interface
+The gateway provides a standardized API for the three pillars of machine memory:
 
-🔄 Async Extraction & Hindsight
-One of the core features will be the Hindsight Pattern. RecallProxy will manage memory operations asynchronously:
+Semantic Memory: Similarity-based retrieval (e.g., Vector DBs).
 
-Intercepting Responses: As the LLM streams a response, RecallProxy captures it.
+Structural Memory: Relationship-based retrieval (e.g., Knowledge Graphs).
 
-Background Processing: It extracts key facts or state changes and updates the underlying memory engines (like Hindsight or pgvector) without making the user wait for the write operation to finish.
+Temporal/Episodic Memory: Time-ordered conversation history and state.
 
-Context Assembly: Before a request even reaches the LLM, the gateway pulls from multiple sources simultaneously to inject the most relevant history and data.
+2. The Orchestration Flow
+RecallProxy manages the complex "Write" and "Read" cycles of memory asynchronously to ensure the agent remains fast and responsive. A typical flow looks like:
 
-🏗 Planned Functionality
-Universal Memory API: A single set of endpoints to read/write memory regardless of the backend engine.
+The Ingest (Write): Raw data is intercepted from an agent interaction. RecallProxy routes this data to a Structural Engine (to map relationships) and simultaneously to a Temporal Engine for long-term archival.
 
-Memory Routing: Smart logic to decide which memory engine (Semantic vs. Structural) holds the answer to a specific agent query.
+The Hindsight Pattern: Complex extraction (turning raw text into structured memory) happens as a background task. The gateway ensures that today's raw conversation becomes tomorrow's searchable context without blocking the current LLM response.
 
-Streaming Support: Full support for LLM response streaming with transparent "on-the-fly" memory extraction.
+The Assembly (Read): Before a request is forwarded to the LLM, RecallProxy queries the configured engines in parallel, synthesizes the results, and injects the "perfect" context into the system prompt.
 
-Provider Neutrality: Compatible with any OpenAI-compliant endpoint, including LiteLLM, Anthropic, and local LLMs.
+3. Future-Proofing
+Start simple by integrating a single engine (like a basic vector store). As your agent's needs grow, you can add or swap implementations—integrating graph engines or specialized episodic databases—by simply updating the RecallProxy configuration.
+
+⚡ Built for Performance (Rust)
+RecallProxy is implemented in Rust to ensure that adding a middleware layer doesn't add a latency penalty.
+
+Zero-Cost Abstractions: High-level memory routing with low-level speed.
+
+Async-First: Leveraging Rust's tokio runtime to handle concurrent memory engine lookups and background extraction pipelines efficiently.
 
 🚦 Project Status: Conceptual
-RecallProxy is currently being architected. We are defining the core traits and interface standards for the first set of memory engine integrations.
+RecallProxy is currently being architected. We are focusing on defining the core Memory Traits that will allow any database or memory service to be plugged into the gateway.
 
-What we are working on:
+Focus Areas:
 
-Defining the MemoryProvider trait in Rust.
+Designing the ContextEngine trait system.
 
-Designing the YAML-based orchestration schema.
+Developing the async "Hindsight" extraction pipeline.
 
-Prototyping the async extraction pipeline.
+Creating a standard configuration schema for multi-engine orchestration.
 
 📜 License
-Distributed under the Apache License 2.0.
+Distributed under the MIT License.
 
 Built with ❤️ for the Agentic future.
