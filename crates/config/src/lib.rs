@@ -1,71 +1,249 @@
+//! Configuration schema and loading contracts.
+//!
+//! # Responsibility
+//! Holds runtime-agnostic configuration types used to wire providers and
+//! gateway behavior.
+
+pub mod context_pipeline;
+
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 /// Top-level application configuration.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GatewayConfig {
-    pub bind_address: String,
+    #[serde(default)]
     pub providers: Vec<ProviderConfig>,
-    pub routes: Vec<MemoryRouteConfig>,
-    pub hindsight_enabled: bool,
+    #[serde(default)]
+    pub read_pipelines: Vec<ReadPipeline>,
+    #[serde(default)]
+    pub write_pipelines: Vec<WritePipeline>,
+    #[serde(default = "default_bind_address")]
+    pub bind_address: String,
+}
+
+impl GatewayConfig {
+    pub fn read_candidates(&self, capability: Capability) -> Vec<&ReadProviderRoute> {
+        let mut candidates = self
+            .read_pipelines
+            .iter()
+            .flat_map(|pipeline| pipeline.providers.iter())
+            .filter(|route| route.capability == capability && route.enabled)
+            .collect::<Vec<_>>();
+
+        candidates.sort_by(|a, b| {
+            a.priority
+                .cmp(&b.priority)
+                .then_with(|| b.weight.cmp(&a.weight))
+                .then_with(|| a.provider_id.cmp(&b.provider_id))
+        });
+
+        candidates
+    }
 }
 
 /// Provider wiring information.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProviderConfig {
-    pub name: String,
-    pub kind: String,
+    pub id: String,
+    pub provider_type: ProviderType,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub capabilities: Vec<Capability>,
+    #[serde(default)]
+    pub settings: BTreeMap<String, String>,
 }
 
-/// Serde-serializable provider endpoint configuration.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct EngineProviderConfig {
-    pub provider: String,
-    pub endpoint: String,
-    pub api_key_env: Option<String>,
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ProviderType {
+    Semantic,
+    Structural,
+    Temporal,
+    Composite,
 }
 
-/// Route binding a memory type to a provider.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MemoryRouteConfig {
-    pub memory_type: String,
-    pub provider: EngineProviderConfig,
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum Capability {
+    SemanticSearch,
+    GraphNeighborhood,
+    EpisodicTimeline,
+    SessionState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ReadPipeline {
+    pub id: String,
+    #[serde(default)]
+    pub providers: Vec<ReadProviderRoute>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ReadProviderRoute {
+    pub provider_id: String,
+    pub capability: Capability,
+    #[serde(default = "default_priority")]
+    pub priority: u16,
+    #[serde(default = "default_weight")]
+    pub weight: u16,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct WritePipeline {
+    pub id: String,
+    #[serde(default = "default_trigger")]
+    pub trigger: WriteTrigger,
+    #[serde(default)]
+    pub sinks: Vec<WriteSinkRoute>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WriteTrigger {
+    OnRequest,
+    OnResponse,
+    AsyncHindsight,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct WriteSinkRoute {
+    pub provider_id: String,
+    pub capability: Capability,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    #[serde(default = "default_criticality")]
+    pub criticality: SinkCriticality,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SinkCriticality {
+    Required,
+    BestEffort,
+}
+
+fn default_bind_address() -> String {
+    "127.0.0.1:8080".to_string()
+}
+
+fn default_enabled() -> bool {
+    true
+}
+
+fn default_priority() -> u16 {
+    100
+}
+
+fn default_weight() -> u16 {
+    100
+}
+
+fn default_trigger() -> WriteTrigger {
+    WriteTrigger::OnResponse
+}
+
+fn default_criticality() -> SinkCriticality {
+    SinkCriticality::BestEffort
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{EngineProviderConfig, GatewayConfig, MemoryRouteConfig, ProviderConfig};
+    use super::*;
 
     #[test]
-    fn gateway_config_collects_provider_configs() {
-        let config = GatewayConfig {
-            bind_address: "127.0.0.1:8080".to_string(),
-            providers: vec![ProviderConfig {
-                name: "primary".to_string(),
-                kind: "semantic".to_string(),
-            }],
-            routes: vec![],
-            hindsight_enabled: false,
+    fn gateway_config_default_bind_address() {
+        let _config = GatewayConfig {
+            providers: vec![],
+            read_pipelines: vec![],
+            write_pipelines: vec![],
+            bind_address: String::new(),
         };
-
-        assert_eq!(config.bind_address, "127.0.0.1:8080");
-        assert_eq!(config.providers.len(), 1);
-        assert_eq!(config.providers[0].name, "primary");
-        assert_eq!(config.providers[0].kind, "semantic");
+        assert_eq!(default_bind_address(), "127.0.0.1:8080");
     }
 
     #[test]
-    fn memory_route_config_is_serializable() {
-        let route = MemoryRouteConfig {
-            memory_type: "structural".to_string(),
-            provider: EngineProviderConfig {
-                provider: "my-engine".to_string(),
-                endpoint: "http://localhost:9001".to_string(),
-                api_key_env: Some("ENGINE_API_KEY".to_string()),
-            },
+    fn read_candidates_are_sorted_by_priority_then_weight() {
+        let config = GatewayConfig {
+            providers: vec![],
+            read_pipelines: vec![ReadPipeline {
+                id: "default".to_string(),
+                providers: vec![
+                    ReadProviderRoute {
+                        provider_id: "semantic_secondary".to_string(),
+                        capability: Capability::SemanticSearch,
+                        priority: 20,
+                        weight: 80,
+                        enabled: true,
+                    },
+                    ReadProviderRoute {
+                        provider_id: "semantic_primary".to_string(),
+                        capability: Capability::SemanticSearch,
+                        priority: 10,
+                        weight: 50,
+                        enabled: true,
+                    },
+                    ReadProviderRoute {
+                        provider_id: "semantic_same_priority_higher_weight".to_string(),
+                        capability: Capability::SemanticSearch,
+                        priority: 10,
+                        weight: 70,
+                        enabled: true,
+                    },
+                ],
+            }],
+            write_pipelines: vec![],
+            bind_address: String::new(),
         };
 
-        let json = serde_json::to_string(&route).expect("serialization should succeed");
-        assert!(json.contains("structural"));
-        assert!(json.contains("my-engine"));
+        let sorted = config.read_candidates(Capability::SemanticSearch);
+        let provider_ids = sorted
+            .into_iter()
+            .map(|route| route.provider_id.clone())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            provider_ids,
+            vec![
+                "semantic_same_priority_higher_weight".to_string(),
+                "semantic_primary".to_string(),
+                "semantic_secondary".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn read_candidates_filter_out_disabled_routes() {
+        let config = GatewayConfig {
+            providers: vec![],
+            read_pipelines: vec![ReadPipeline {
+                id: "default".to_string(),
+                providers: vec![
+                    ReadProviderRoute {
+                        provider_id: "enabled".to_string(),
+                        capability: Capability::GraphNeighborhood,
+                        priority: 100,
+                        weight: 100,
+                        enabled: true,
+                    },
+                    ReadProviderRoute {
+                        provider_id: "disabled".to_string(),
+                        capability: Capability::GraphNeighborhood,
+                        priority: 0,
+                        weight: 100,
+                        enabled: false,
+                    },
+                ],
+            }],
+            write_pipelines: vec![],
+            bind_address: String::new(),
+        };
+
+        let candidates = config.read_candidates(Capability::GraphNeighborhood);
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].provider_id, "enabled");
     }
 }
