@@ -86,6 +86,28 @@ curl http://127.0.0.1:8080/health
 # {"status":"ok","service":"recall-proxy-gateway"}
 ```
 
+## Docker
+
+You can build and run the gateway server using Docker for local development.
+
+### Build
+
+```bash
+docker build -t recall-proxy-gateway .
+```
+
+### Run
+
+```bash
+docker run -p 8080:8080 recall-proxy-gateway
+```
+
+By default, the container binds to `0.0.0.0:8080`. You can customize this using environment variables:
+
+```bash
+docker run -p 3000:3000 -e RECALL_PROXY_BIND_ADDRESS=0.0.0.0:3000 recall-proxy-gateway
+```
+
 ## Testing
 
 Main flows are covered with unit tests:
