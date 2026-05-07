@@ -62,4 +62,11 @@ Intended implementation targets are outlined in:
 
 ## License
 
+## Current Implementation Snapshot
+
+The initial Rust workspace now includes `crates/core/src/memory.rs`, which defines:
+
+- `RawTranscript` for temporal ingest boundaries.
+- `DerivedFact` for extracted structural artifacts.
+- `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write contracts across semantic, structural, and temporal engines.
 Distributed under the MIT License.
