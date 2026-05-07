@@ -1,7 +1,0 @@
-/Users/daveri/multica_workspaces_desktop-api.multica.ai/c601755d-67d8-41d6-af9c-84dd78f24341/d37f0485/workdir/recall-proxy/target/debug/deps/pin_project_lite-b7ae01b0111fe035.d: /Users/daveri/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-project-lite-0.2.17/src/lib.rs
-
-/Users/daveri/multica_workspaces_desktop-api.multica.ai/c601755d-67d8-41d6-af9c-84dd78f24341/d37f0485/workdir/recall-proxy/target/debug/deps/libpin_project_lite-b7ae01b0111fe035.rlib: /Users/daveri/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-project-lite-0.2.17/src/lib.rs
-
-/Users/daveri/multica_workspaces_desktop-api.multica.ai/c601755d-67d8-41d6-af9c-84dd78f24341/d37f0485/workdir/recall-proxy/target/debug/deps/libpin_project_lite-b7ae01b0111fe035.rmeta: /Users/daveri/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-project-lite-0.2.17/src/lib.rs
-
-/Users/daveri/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pin-project-lite-0.2.17/src/lib.rs:

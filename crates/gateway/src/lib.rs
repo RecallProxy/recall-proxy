@@ -7,8 +7,10 @@
 //! # Public surface
 //! - `GatewayRuntime`: runtime boundary for incoming requests.
 //! - `response`: streaming response capture and handoff orchestration.
+//! - `orchestrator`: async orchestrator with parallel ingest and context assembly.
 
 pub mod response;
+pub mod orchestrator;
 
 use recall_proxy_config::GatewayConfig;
 use recall_proxy_core::memory::MemoryProvider;
