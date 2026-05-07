@@ -48,6 +48,21 @@ Developing the async "Hindsight" extraction pipeline.
 
 Creating a standard configuration schema for multi-engine orchestration.
 
+## Configuration-First Orchestration
+
+RecallProxy now defines a provider-based configuration schema in `crates/config/src/lib.rs` with explicit routing fields for:
+
+- request-time reads (`read_pipelines`)
+- response-time and asynchronous writes (`write_pipelines`)
+- provider-specific settings (`providers[].settings`)
+- deterministic multi-provider routing using `priority` + `weight`
+
+To explore configuration evolution paths, see:
+
+- `config/examples/simple-single-engine.yaml`
+- `config/examples/multi-engine-orchestration.yaml`
+- `docs/architecture/configuration.md`
+
 📜 License
 Distributed under the MIT License.
 
