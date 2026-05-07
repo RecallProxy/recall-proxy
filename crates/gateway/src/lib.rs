@@ -11,7 +11,7 @@
 pub mod response;
 
 use recall_proxy_config::GatewayConfig;
-use recall_proxy_core::MemoryProvider;
+use recall_proxy_core::memory::MemoryProvider;
 
 /// Runtime entrypoint for API request orchestration.
 pub struct GatewayRuntime<P: MemoryProvider> {
@@ -27,20 +27,39 @@ impl<P: MemoryProvider> GatewayRuntime<P> {
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
+    use std::time::Duration;
+
+    use recall_proxy_core::memory::{CapabilityDescriptor, MemoryKind, MemoryProvider, ProviderMetadata};
+    use recall_proxy_core::error::ProviderResult;
+
     use super::GatewayRuntime;
     use recall_proxy_config::{GatewayConfig, ProviderConfig};
-    use recall_proxy_core::MemoryProvider;
 
     struct StubProvider;
 
     impl MemoryProvider for StubProvider {
-        fn provider_name(&self) -> &'static str {
-            "stub"
+        fn metadata(&self) -> ProviderMetadata {
+            ProviderMetadata {
+                provider_id: Cow::Borrowed("stub"),
+                version: Cow::Borrowed("0.1.0"),
+                capabilities: vec![CapabilityDescriptor {
+                    kind: MemoryKind::Temporal,
+                    supports_ingest: true,
+                    supports_query: true,
+                    supports_streaming: false,
+                    max_batch_size: None,
+                }],
+            }
+        }
+
+        async fn healthcheck(&self, _timeout: Duration) -> ProviderResult<()> {
+            Ok(())
         }
     }
 
-    #[test]
-    fn gateway_runtime_new_stores_config_and_provider() {
+    #[tokio::test]
+    async fn gateway_runtime_new_stores_config_and_provider() {
         let config = GatewayConfig {
             bind_address: "0.0.0.0:9000".to_string(),
             providers: vec![ProviderConfig {
@@ -53,6 +72,6 @@ mod tests {
 
         assert_eq!(runtime.config.bind_address, "0.0.0.0:9000");
         assert_eq!(runtime.config.providers.len(), 1);
-        assert_eq!(runtime.provider.provider_name(), "stub");
+        assert_eq!(runtime.provider.metadata().provider_id, "stub");
     }
 }
