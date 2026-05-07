@@ -40,6 +40,11 @@ The project's mission is to decouple agent logic from specific memory implementa
   - `WritePipeline`
 - `recall-proxy-gateway`
   - `GatewayRuntime`
+  - `response::ChunkCapture`
+  - `response::ChunkEvent`
+  - `response::FinalizedResponse`
+  - `response::FinishReason`
+  - `response::NonBlockingHandoffOrchestrator`
 - `recall-proxy-hindsight-worker`
   - `HindsightJob`
   - `WorkerRuntime`
@@ -90,20 +95,34 @@ crates (for example, `crates/providers/*`) without coupling SDK-specific code to
 the gateway runtime. Runtime crates depend on shared traits from `core` rather
 than directly on provider SDKs.
 
+## Hindsight Pipeline Design
+
+The asynchronous response-path design for transcript capture, background handoff,
+worker stages, and replay-safe retries is documented in:
+
+- `docs/architecture/hindsight-flow.md`
+
+Intended implementation targets are outlined in:
+
+- `crates/gateway/src/response/`
+- `crates/core/src/events/`
+- `crates/core/src/memory/`
+- `crates/hindsight-worker/src/`
 ## Current Implementation Snapshot
 
 The initial Rust workspace now includes `crates/core/src/memory.rs`, which defines:
 
 - `RawTranscript` for temporal ingest boundaries.
 - `DerivedFact` for extracted structural artifacts.
-- `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write contracts across semantic, structural, and temporal engines.
+- `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write
+  contracts across semantic, structural, and temporal engines.
 
-## Built for Performance (Rust)
+The gateway response streaming capture contract in `crates/gateway/src/response`
+supports:
 
-RecallProxy is implemented in Rust to ensure that adding a middleware layer doesn't add a latency penalty.
-
-- **Zero-Cost Abstractions**: High-level memory routing with low-level speed.
-- **Async-First**: Leveraging Rust's tokio runtime to handle concurrent memory engine lookups and background extraction pipelines efficiently.
+- Chunk capture with sequence validation.
+- Response finalization metadata (finish reason, start and completion times).
+- Non-blocking handoff orchestration for background memory ingestion pipelines.
 
 ## License
 

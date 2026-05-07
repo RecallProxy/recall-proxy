@@ -1,47 +1,77 @@
-pub mod context_assembly;
-pub mod request;
+//! HTTP/API-facing gateway orchestration.
+//!
+//! # Responsibility
+//! Hosts request-level orchestration and delegates provider access through
+//! `recall-proxy-core` traits.
+//!
+//! # Public surface
+//! - `GatewayRuntime`: runtime boundary for incoming requests.
+//! - `response`: streaming response capture and handoff orchestration.
+
+pub mod response;
 
 use recall_proxy_config::GatewayConfig;
+use recall_proxy_core::memory::MemoryProvider;
 
-pub struct GatewayRuntime {
+/// Runtime entrypoint for API request orchestration.
+pub struct GatewayRuntime<P: MemoryProvider> {
     pub config: GatewayConfig,
+    pub provider: P,
 }
 
-impl GatewayRuntime {
-    pub fn new(config: GatewayConfig) -> Self {
-        Self { config }
+impl<P: MemoryProvider> GatewayRuntime<P> {
+    pub fn new(config: GatewayConfig, provider: P) -> Self {
+        Self { config, provider }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::GatewayRuntime;
-    use recall_proxy_config::{Capability, GatewayConfig, ProviderConfig, ProviderType, ReadPipeline, ReadProviderRoute};
+    use std::borrow::Cow;
+    use std::time::Duration;
 
-    #[test]
-    fn gateway_runtime_new_stores_config() {
-        let config = GatewayConfig {
-            providers: vec![ProviderConfig {
-                id: "stub".to_string(),
-                provider_type: ProviderType::Semantic,
-                enabled: true,
-                capabilities: vec![Capability::SemanticSearch],
-                settings: Default::default(),
-            }],
-            read_pipelines: vec![ReadPipeline {
-                id: "default".to_string(),
-                providers: vec![ReadProviderRoute {
-                    provider_id: "stub".to_string(),
-                    capability: Capability::SemanticSearch,
-                    priority: 10,
-                    weight: 100,
-                    enabled: true,
+    use recall_proxy_core::memory::{CapabilityDescriptor, MemoryKind, MemoryProvider, ProviderMetadata};
+    use recall_proxy_core::error::ProviderResult;
+
+    use super::GatewayRuntime;
+    use recall_proxy_config::{GatewayConfig, ProviderConfig};
+
+    struct StubProvider;
+
+    impl MemoryProvider for StubProvider {
+        fn metadata(&self) -> ProviderMetadata {
+            ProviderMetadata {
+                provider_id: Cow::Borrowed("stub"),
+                version: Cow::Borrowed("0.1.0"),
+                capabilities: vec![CapabilityDescriptor {
+                    kind: MemoryKind::Temporal,
+                    supports_ingest: true,
+                    supports_query: true,
+                    supports_streaming: false,
+                    max_batch_size: None,
                 }],
+            }
+        }
+
+        async fn healthcheck(&self, _timeout: Duration) -> ProviderResult<()> {
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn gateway_runtime_new_stores_config_and_provider() {
+        let config = GatewayConfig {
+            bind_address: "0.0.0.0:9000".to_string(),
+            providers: vec![ProviderConfig {
+                name: "stub-provider".to_string(),
+                kind: "temporal".to_string(),
             }],
-            write_pipelines: vec![],
         };
 
-        let runtime = GatewayRuntime::new(config);
+        let runtime = GatewayRuntime::new(config, StubProvider);
+
+        assert_eq!(runtime.config.bind_address, "0.0.0.0:9000");
         assert_eq!(runtime.config.providers.len(), 1);
+        assert_eq!(runtime.provider.metadata().provider_id, "stub");
     }
 }
