@@ -1,6 +1,8 @@
+pub use crate::gateway_types::EngineError;
+
 use async_trait::async_trait;
 
-use crate::gateway_types::{ContextSnippet, EngineError, MemoryQuery};
+use crate::gateway_types::{ContextSnippet, MemoryQuery};
 use crate::memory::{MemoryProviderKind, MemoryRecord};
 
 #[async_trait]

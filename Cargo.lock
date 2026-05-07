@@ -214,6 +214,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "serde",
+ "tokio",
 ]
 
 [[package]]
