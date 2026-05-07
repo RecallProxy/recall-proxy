@@ -36,6 +36,11 @@ contracts, runtime orchestration, and background processing concerns.
   - `ProviderConfig`
 - `recall-proxy-gateway`
   - `GatewayRuntime`
+  - `response::ChunkCapture`
+  - `response::ChunkEvent`
+  - `response::FinalizedResponse`
+  - `response::FinishReason`
+  - `response::NonBlockingHandoffOrchestrator`
 - `recall-proxy-hindsight-worker`
   - `HindsightJob`
   - `WorkerRuntime`
@@ -49,7 +54,8 @@ than directly on provider SDKs.
 
 ## Hindsight Pipeline Design
 
-The asynchronous response-path design for transcript capture, background handoff, worker stages, and replay-safe retries is documented in:
+The asynchronous response-path design for transcript capture, background handoff,
+worker stages, and replay-safe retries is documented in:
 
 - `docs/architecture/hindsight-flow.md`
 
@@ -60,13 +66,22 @@ Intended implementation targets are outlined in:
 - `crates/core/src/memory/`
 - `crates/hindsight-worker/src/`
 
-## License
-
 ## Current Implementation Snapshot
 
 The initial Rust workspace now includes `crates/core/src/memory.rs`, which defines:
 
 - `RawTranscript` for temporal ingest boundaries.
 - `DerivedFact` for extracted structural artifacts.
-- `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write contracts across semantic, structural, and temporal engines.
+- `ProviderWritePayload` and `ProviderWriteBody` for normalized provider write
+  contracts across semantic, structural, and temporal engines.
+
+The gateway response streaming capture contract in `crates/gateway/src/response`
+supports:
+
+- Chunk capture with sequence validation.
+- Response finalization metadata (finish reason, start and completion times).
+- Non-blocking handoff orchestration for background memory ingestion pipelines.
+
+## License
+
 Distributed under the MIT License.

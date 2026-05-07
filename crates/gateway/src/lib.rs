@@ -6,6 +6,9 @@
 //!
 //! # Public surface
 //! - `GatewayRuntime`: runtime boundary for incoming requests.
+//! - `response`: streaming response capture and handoff orchestration.
+
+pub mod response;
 
 use recall_proxy_config::GatewayConfig;
 use recall_proxy_core::MemoryProvider;
