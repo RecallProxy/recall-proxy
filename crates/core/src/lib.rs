@@ -20,6 +20,7 @@ pub trait MemoryProvider {
     fn provider_name(&self) -> &'static str;
 }
 
+pub mod events;
 pub mod memory;
 
 #[cfg(test)]
