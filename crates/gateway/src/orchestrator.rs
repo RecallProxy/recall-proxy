@@ -105,7 +105,7 @@ mod tests {
         HindsightProcessor, SemanticEngine, StructuralEngine, TemporalEngine,
     };
     use recall_proxy_core::gateway_types::{
-        ContextSnippet, EngineError, MemoryPayload, MemoryQuery, MemoryType,
+        ContextEngineType, ContextSnippet, EngineError, MemoryPayload, MemoryQuery,
     };
 
     use crate::orchestrator::ContextGateway;
@@ -218,7 +218,7 @@ mod tests {
             ingests: Arc::new(AtomicUsize::new(0)),
             snippets: vec![ContextSnippet {
                 source: "graph".to_string(),
-                memory_type: MemoryType::Structural,
+                engine_type: ContextEngineType::Structural,
                 content: "user likes rust".to_string(),
                 score: None,
             }],
@@ -227,7 +227,7 @@ mod tests {
             ingests: Arc::new(AtomicUsize::new(0)),
             snippets: vec![ContextSnippet {
                 source: "timeline".to_string(),
-                memory_type: MemoryType::Temporal,
+                engine_type: ContextEngineType::Temporal,
                 content: "last action was login".to_string(),
                 score: None,
             }],
@@ -236,7 +236,7 @@ mod tests {
             ingests: Arc::new(AtomicUsize::new(0)),
             snippets: vec![ContextSnippet {
                 source: "vector".to_string(),
-                memory_type: MemoryType::Semantic,
+                engine_type: ContextEngineType::Semantic,
                 content: "related prior solution".to_string(),
                 score: Some(0.95),
             }],

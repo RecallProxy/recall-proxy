@@ -1,0 +1,66 @@
+prompts:
+  health_check: |
+    Test the RecallProxy gateway health endpoint.
+
+  ingest_check: |
+    Test the RecallProxy gateway ingest endpoint.
+
+providers:
+  - id: rest-get
+    config:
+      url: http://localhost:8080/health
+      method: GET
+  - id: rest-post
+    config:
+      url: http://localhost:8080/ingest
+      method: POST
+      headers:
+        Content-Type: application/json
+      body:
+        interaction_id: "test-001"
+        content: "Test interaction content"
+
+tests:
+  - description: Gateway health check returns 200 status
+    vars:
+      prompt: health_check
+    provider: rest-get
+    assert:
+      - type: is-status
+        value: 200
+      - type: is-json
+      - type: json-valid
+
+  - description: Health response contains expected fields
+    vars:
+      prompt: health_check
+    provider: rest-get
+    assert:
+      - type: is-status
+        value: 200
+      - type: matches-json-path
+        path: $.status
+        expected: ok
+      - type: matches-json-path
+        path: $.service
+        expected: recall-proxy-gateway
+
+  - description: Gateway ingest endpoint returns 200 status
+    vars:
+      prompt: ingest_check
+    provider: rest-post
+    assert:
+      - type: is-status
+        value: 200
+      - type: is-json
+
+  - description: Ingest response contains success status
+    vars:
+      prompt: ingest_check
+    provider: rest-post
+    assert:
+      - type: is-status
+        value: 200
+      - type: matches-json-path
+        path: $.status
+        expected: stored

@@ -1,6 +1,6 @@
 # Repository Layout
 
-This document defines the initial crate boundaries for RecallProxy.
+This document defines the crate boundaries for RecallProxy.
 
 ## Workspace Modules
 
@@ -9,8 +9,13 @@ This document defines the initial crate boundaries for RecallProxy.
 **Responsibility:** Provider-agnostic contracts and shared domain types.
 
 **Public surface:**
-- `MemoryRecord`
-- `MemoryProvider`
+- `ContextEngineType` — canonical engine type enum (Structural, Temporal, Semantic, Graph)
+- `ContextEngine` trait — unified async trait for engine providers
+- `ContextRequest`, `ContextSnippet`, `EngineLookupResult` — shared domain types
+- `MemoryRecord`, `RawTranscript`, `DerivedFact` — memory artifact types
+- `MemoryProvider`, `SemanticMemoryProvider`, `StructuralMemoryProvider`, `TemporalMemoryProvider` — provider-facing traits
+- `ProviderError`, `ProviderResult` — error types
+- `HandoffEnvelope`, `TraceContext`, `EventId` — event delivery contracts
 
 This crate must not depend on transport or concrete provider SDK crates.
 
@@ -19,8 +24,11 @@ This crate must not depend on transport or concrete provider SDK crates.
 **Responsibility:** Configuration schema shared by runtimes and workers.
 
 **Public surface:**
-- `GatewayConfig`
-- `ProviderConfig`
+- `RecallProxyConfig` — top-level config matching the YAML examples (providers, read_pipelines, write_pipelines)
+- `ProviderRegistration` — provider registry entry
+- `ReadPipeline`, `ReadProviderRoute` — request-time routing
+- `WritePipeline`, `WriteSink`, `WriteTrigger`, `WriteCriticality` — response/async writes
+- `ContextPipelineConfig`, `EngineConfig`, `MergePolicyConfig` — context assembly pipeline config
 
 This crate stays pure-data to keep config loading/parsing and runtime wiring
 decoupled.
@@ -30,7 +38,11 @@ decoupled.
 **Responsibility:** Request-facing orchestration layer for API traffic.
 
 **Public surface:**
-- `GatewayRuntime`
+- `ContextGateway` — per-engine-type orchestrator (StructuralEngine, TemporalEngine, SemanticEngine)
+- `ContextMemoryGateway` — unified ContextEngine trait orchestrator
+- `ContextEngineProvider`, `ContextAssembler` — request-path traits
+- `RequestContextOrchestrator` — request-time context assembly
+- `ChunkCapture`, `FinalizedResponse`, `NonBlockingHandoffOrchestrator` — response pipeline
 
 This crate orchestrates read/write flows and depends on `core` traits instead of
 provider implementations.
@@ -40,8 +52,9 @@ provider implementations.
 **Responsibility:** Background ingestion and extraction pipelines.
 
 **Public surface:**
-- `HindsightJob`
-- `WorkerRuntime`
+- `HindsightPipeline` — background extraction pipeline
+- `HindsightExtractor` — pluggable extraction trait
+- `HindsightJob`, `WorkerRuntime` — worker runtime boundary
 
 This crate isolates asynchronous work from latency-sensitive gateway paths.
 
