@@ -45,6 +45,17 @@ provider implementations.
 
 This crate isolates asynchronous work from latency-sensitive gateway paths.
 
+### `crates/mcp-server` (`recall-proxy-mcp-server`)
+
+**Responsibility:** MCP server binary and in-memory engine providers for the MVP path.
+
+**Public surface:**
+- `InMemoryContextEngine` — in-memory `ContextEngine` implementation
+- `build_router` — constructs the axum `Router` with `/ingest`, `/retrieve`, `/health`
+- `default_gateway` — creates a gateway pre-wired with in-memory engines
+
+This crate is the entry point for proving the end-to-end MVP flow.
+
 ## Extension Points
 
 - Provider integrations should live in dedicated crates (for example,

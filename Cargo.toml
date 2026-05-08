@@ -4,6 +4,7 @@ members = [
     "crates/config",
     "crates/gateway",
     "crates/hindsight-worker",
+    "crates/mcp-server",
 ]
 resolver = "2"
 

@@ -19,7 +19,8 @@ agent code.
 │   ├── config         # Configuration schema
 │   ├── core           # Provider abstractions and domain types
 │   ├── gateway        # Ingest routing and context assembly
-│   └── hindsight-worker  # Async background extraction pipeline
+│   ├── hindsight-worker  # Async background extraction pipeline
+│   └── mcp-server     # MCP server with in-memory engines for the MVP path
 └── docs
     └── architecture
 ```
@@ -36,6 +37,9 @@ agent code.
   routing and context assembly.
 - **recall-proxy-hindsight-worker**: `HindsightPipeline` with a background
   `tokio::mpsc` queue and a pluggable `HindsightExtractor` trait.
+- **recall-proxy-mcp-server**: HTTP MCP server exposing `/ingest` and `/retrieve`
+  endpoints backed by in-memory `ContextEngine` providers. Used for MVP
+  verification and local development.
 
 ## Architecture Milestones (Initial Implementation)
 
@@ -58,12 +62,56 @@ agent code.
    - Two complementary orchestrators: `ContextGateway` (per-engine-type traits)
      and `ContextMemoryGateway` (unified `ContextEngine` trait).
 
-## Hindsight Pipeline Design
+## MVP Happy Path: Ingest to Retrieval
 
-The asynchronous response-path design for transcript capture, background handoff,
-worker stages, and replay-safe retries is documented in:
+The MVP path uses in-memory engines behind the MCP server to prove the
+end-to-end flow without external dependencies.
 
-- `docs/architecture/hindsight-flow.md`
+1. **Start the MCP server**
+
+   ```bash
+   cargo run -p recall-proxy-mcp-server
+   ```
+
+   The server binds to `127.0.0.1:8081` by default.
+
+2. **Ingest a record**
+
+   ```bash
+   curl -X POST http://127.0.0.1:8081/ingest \
+     -H "Content-Type: application/json" \
+     -d '{
+       "session_id": "demo-session",
+       "namespace": "user-preferences",
+       "content": "user prefers Rust"
+     }'
+   ```
+
+3. **Retrieve context**
+
+   ```bash
+   curl -X POST http://127.0.0.1:8081/retrieve \
+     -H "Content-Type: application/json" \
+     -d '{
+       "session_id": "demo-session",
+       "prompt": "user-preferences",
+       "max_results": 10
+     }'
+   ```
+
+4. **Verify health**
+
+   ```bash
+   curl http://127.0.0.1:8081/health
+   # ok
+   ```
+
+Detailed architecture docs:
+
+- `docs/architecture/request-flow.md` — request-time context assembly pipeline
+- `docs/architecture/configuration.md` — configuration schema
+- `docs/architecture/repository-layout.md` — crate boundaries
+- `docs/architecture/hindsight-flow.md` — hindsight extraction pipeline
 
 ## Running the Gateway Server
 
@@ -110,7 +158,7 @@ docker run -p 3000:3000 -e RECALL_PROXY_BIND_ADDRESS=0.0.0.0:3000 recall-proxy-g
 
 ## Testing
 
-Main flows are covered with unit tests:
+Main flows are covered with unit and integration tests:
 
 ```bash
 cargo test
@@ -119,12 +167,21 @@ cargo test
 - Ingest writes are routed to structural and temporal engines.
 - Read assembly combines context from configured engines.
 - Hindsight pipeline processes interactions in the background.
+- End-to-end MVP path (ingest -> retrieve) verified via `tests/integration.rs`.
 
 ## Project Status
 
-Active foundation stage: core abstractions, orchestration scaffolding, and
-test-backed flows are in place. Next iterations can add concrete provider
-adapters and integration tests against simulated endpoints.
+Shipped capabilities:
+
+- `recall-proxy-core` — `ContextEngine` trait, provider abstractions, shared domain types
+- `recall-proxy-config` — `GatewayConfig` / `ProviderConfig` schema
+- `recall-proxy-gateway` — `ContextMemoryGateway` with ingest routing and context assembly
+- `recall-proxy-mcp-server` — HTTP server (`/ingest`, `/retrieve`, `/health`) backed by in-memory engines
+- `tests/integration.rs` — end-to-end smoke tests covering the MVP ingest-to-retrieve path
+- `docs/architecture/` — request-flow, configuration, repository-layout, and hindsight-flow docs
+
+Next iterations: concrete provider adapters, integration tests against simulated endpoints,
+and production-ready backend stores.
 
 ## License
 

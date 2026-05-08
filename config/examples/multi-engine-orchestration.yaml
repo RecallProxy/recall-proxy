@@ -1,78 +1,16 @@
+# Multi-engine orchestration configuration
+#
+# This example shows the full MVP setup: semantic, structural, and
+# temporal providers wired through the gateway.
+
+bind_address: "127.0.0.1:8080"
+
 providers:
-  - id: semantic_primary
-    provider_type: semantic
-    capabilities:
-      - semantic_search
-    settings:
-      endpoint: https://semantic-primary.internal
-      index: customer-support
-
-  - id: semantic_fallback
-    provider_type: semantic
-    capabilities:
-      - semantic_search
-    settings:
-      endpoint: https://semantic-fallback.internal
-      index: cold-archive
-
-  - id: graph_engine
-    provider_type: structural
-    capabilities:
-      - graph_neighborhood
-    settings:
-      endpoint: https://graph.internal
-      namespace: support-relations
-
-  - id: timeline_store
-    provider_type: temporal
-    capabilities:
-      - episodic_timeline
-      - session_state
-    settings:
-      endpoint: https://timeline.internal
-      stream: user-conversations
-
-read_pipelines:
-  - id: llm_request
-    providers:
-      - provider_id: semantic_primary
-        capability: semantic_search
-        priority: 10
-        weight: 100
-      - provider_id: semantic_fallback
-        capability: semantic_search
-        priority: 20
-        weight: 100
-      - provider_id: graph_engine
-        capability: graph_neighborhood
-        priority: 10
-        weight: 100
-      - provider_id: timeline_store
-        capability: episodic_timeline
-        priority: 15
-        weight: 100
-
-write_pipelines:
-  - id: request_snapshot
-    trigger: on_request
-    sinks:
-      - provider_id: timeline_store
-        capability: session_state
-        criticality: best_effort
-
-  - id: response_persist
-    trigger: on_response
-    sinks:
-      - provider_id: timeline_store
-        capability: episodic_timeline
-        criticality: required
-      - provider_id: semantic_primary
-        capability: semantic_search
-        criticality: best_effort
-
-  - id: hindsight_extraction
-    trigger: async_hindsight
-    sinks:
-      - provider_id: graph_engine
-        capability: graph_neighborhood
-        criticality: best_effort
+  - name: semantic_primary
+    kind: semantic
+  - name: semantic_fallback
+    kind: semantic
+  - name: graph_engine
+    kind: structural
+  - name: timeline_store
+    kind: temporal
