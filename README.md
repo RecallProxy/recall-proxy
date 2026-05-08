@@ -120,11 +120,56 @@ cargo test
 - Read assembly combines context from configured engines.
 - Hindsight pipeline processes interactions in the background.
 
+## Memory Provider
+
+RecallProxy ships with a SQLite-backed memory provider as the MVP concrete
+implementation. It provides full ingest and query support against a local
+SQLite database with zero external server requirements.
+
+### Configuring the SQLite Provider
+
+Add a provider entry to your gateway configuration:
+
+```yaml
+providers:
+  - id: sqlite:memory.db
+    provider_type: semantic
+    enabled: true
+    capabilities:
+      - semantic_search
+    settings:
+      db_path: memory.db
+```
+
+Then create the engine at runtime using `create_provider()`:
+
+```rust
+use recall_proxy_config::{GatewayConfig, ProviderConfig, create_provider};
+use recall_proxy_core::memory::MemoryProviderKind;
+
+let config = ProviderConfig {
+    name: "sqlite:memory.db".to_string(),
+    kind: "sqlite".to_string(),
+};
+
+let engine = create_provider(&config).await?;
+```
+
+### Provider Selection Rationale
+
+SQLite was chosen as the MVP provider because:
+
+- Single-file storage, zero external dependencies beyond the `sqlx` driver
+- Full ingest (write) and query (read) support
+- No vendor SDK coupling — uses the standard Rust SQLite driver
+- Suitable for local development and CI verification
+- Can be upgraded to a server-backed provider later with minimal gateway changes
+
 ## Project Status
 
 Active foundation stage: core abstractions, orchestration scaffolding, and
-test-backed flows are in place. Next iterations can add concrete provider
-adapters and integration tests against simulated endpoints.
+test-backed flows are in place. The SQLite memory provider is integrated and
+verified with both unit and integration tests.
 
 ## License
 

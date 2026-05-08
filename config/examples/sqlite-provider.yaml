@@ -1,0 +1,26 @@
+providers:
+  - id: sqlite:memory.db
+    provider_type: semantic
+    enabled: true
+    capabilities:
+      - semantic_search
+    settings:
+      db_path: memory.db
+
+read_pipelines:
+  - id: default
+    providers:
+      - provider_id: sqlite:memory.db
+        capability: semantic_search
+        priority: 10
+        weight: 100
+        enabled: true
+
+write_pipelines:
+  - id: response_archive
+    trigger: on_response
+    sinks:
+      - provider_id: sqlite:memory.db
+        capability: semantic_search
+        criticality: required
+        enabled: true
