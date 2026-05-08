@@ -23,7 +23,8 @@ agent code.
 │   ├── config         # Configuration schema
 │   ├── core           # Provider abstractions and domain types
 │   ├── gateway        # Ingest routing and context assembly
-│   └── hindsight-worker  # Async background extraction pipeline
+│   ├── hindsight-worker  # Async background extraction pipeline
+│   └── mcp-server     # MCP server runtime for RecallProxy
 └── docs
     └── architecture
 ```
@@ -46,6 +47,9 @@ agent code.
   routing and context assembly.
 - **recall-proxy-hindsight-worker**: `HindsightPipeline` with a background
   `tokio::mpsc` queue and a pluggable `HindsightExtractor` trait.
+- **recall-proxy-mcp-server**: Runnable MCP server that exposes memory ingest
+  and query operations over the MCP protocol via JSON-RPC on stdio. Routes
+  requests through the `ContextMemoryGateway` with in-memory engine fallbacks.
 
 ## Architecture Milestones (Initial Implementation)
 
@@ -94,6 +98,59 @@ Verify the service is running:
 ```bash
 curl http://127.0.0.1:8080/health
 # {"status":"ok","service":"recall-proxy-gateway"}
+```
+
+## Running the MCP Server
+
+Start the MCP server:
+
+```bash
+cargo run -p recall-proxy-mcp-server
+```
+
+The server reads JSON-RPC requests from stdin and writes responses to stdout.
+It uses in-memory engines by default (semantic, structural, temporal).
+
+### MCP Protocol Methods
+
+| Method | Description |
+|---|---|
+| `initialize` | Initialize the MCP session and return server capabilities |
+| `initialized` | Notification that the client is fully initialized |
+| `memory/ingest` | Ingest a memory record (params: `namespace`, `content`) |
+| `memory/query` | Query memory across all engines (params: `session_id`, `prompt`, optional `max_results`) |
+
+### Example: Manual JSON-RPC via stdin
+
+```bash
+echo '{"jsonrpc":"2.0","method":"initialize","id":1}' | cargo run -p recall-proxy-mcp-server
+```
+
+Expected response:
+
+```json
+{"jsonrpc":"2.0","result":{"protocol_version":"2025-03-26","server_info":{"name":"recall-proxy-mcp-server","version":"0.1.0"},"capabilities":{"memory":{"ingest":true,"query":true}}},"id":1}
+```
+
+### Example: Ingest and Query
+
+```bash
+printf '{"jsonrpc":"2.0","method":"initialize","id":1}\n{"jsonrpc":"2.0","method":"memory/ingest","params":{"namespace":"session-1","content":"user prefers dark mode"},"id":2}\n{"jsonrpc":"2.0","method":"memory/query","params":{"session_id":"session-1","prompt":"preferences"},"id":3}\n' | cargo run -p recall-proxy-mcp-server
+```
+
+### Connecting with an MCP Client
+
+Any MCP-compatible client can connect by launching the server as a subprocess with stdio transport. For example, using the MCP Python SDK:
+
+```python
+from mcp import ClientSession
+
+async with ClientSession() as session:
+    await session.initialize()
+    result = await session.call_tool(
+        "memory/query",
+        {"session_id": "s1", "prompt": "hello"}
+    )
 ```
 
 ## Docker

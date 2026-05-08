@@ -508,6 +508,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "recall-proxy-mcp-server"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "recall-proxy-config",
+ "recall-proxy-core",
+ "recall-proxy-gateway",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "regex-automata"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -694,6 +709,7 @@ version = "1.52.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "110a78583f19d5cdb2c5ccf321d1290344e71313c6c37d43520d386027d18386"
 dependencies = [
+ "bytes",
  "libc",
  "mio",
  "pin-project-lite",

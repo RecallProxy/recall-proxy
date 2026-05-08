@@ -1,0 +1,23 @@
+[package]
+name = "recall-proxy-mcp-server"
+edition = "2021"
+version = "0.1.0"
+license = "MIT"
+
+[[bin]]
+name = "recall-proxy-mcp-server"
+path = "src/main.rs"
+
+[dependencies]
+recall-proxy-core = { path = "../core" }
+recall-proxy-config = { path = "../config" }
+recall-proxy-gateway = { path = "../gateway" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "io-util", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
