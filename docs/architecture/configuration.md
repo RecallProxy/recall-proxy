@@ -2,6 +2,14 @@
 
 RecallProxy configuration is provider-driven. Runtime behavior is determined by declarative routing rules instead of hard-coded adapters.
 
+## Canonical Config Model
+
+The canonical model is `RecallProxyConfig` in `crates/config/src/lib.rs`. It maps directly to the YAML examples and supports:
+
+- **Provider registration** with capabilities, settings, and feature toggles.
+- **Read pipelines** for request-time retrieval with priority/weight routing.
+- **Write pipelines** for response-time and async persistence with criticality levels.
+
 ## Top-Level Model
 
 - `providers`: Registry of all memory engines available to the gateway.

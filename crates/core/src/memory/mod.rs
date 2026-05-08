@@ -5,7 +5,7 @@ use std::time::Duration;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::context::{ContextChunk, IngestAck, IngestRequest, QueryRequest, QueryResponse};
+use crate::context::{ContextChunk, ContextEngineType, IngestAck, IngestRequest, QueryRequest, QueryResponse};
 use crate::error::ProviderResult;
 
 /// A normalized memory item produced or consumed by providers.
@@ -56,12 +56,29 @@ impl DerivedFact {
 }
 
 /// Memory engine classes that RecallProxy can route to.
+#[deprecated(
+    since = "0.1.0",
+    note = "use ContextEngineType from the context module instead"
+)]
+#[doc(hidden)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MemoryProviderKind {
     Semantic,
     Structural,
     Temporal,
+}
+
+#[allow(deprecated)]
+impl From<ContextEngineType> for MemoryProviderKind {
+    fn from(ty: ContextEngineType) -> Self {
+        match ty {
+            ContextEngineType::Structural => MemoryProviderKind::Structural,
+            ContextEngineType::Temporal => MemoryProviderKind::Temporal,
+            ContextEngineType::Semantic => MemoryProviderKind::Semantic,
+            ContextEngineType::Graph => MemoryProviderKind::Semantic,
+        }
+    }
 }
 
 /// Normalized payload boundary given to provider adapters.
@@ -86,6 +103,11 @@ pub enum ProviderWriteBody {
     },
 }
 
+#[deprecated(
+    since = "0.1.0",
+    note = "use ContextEngineType from the context module instead"
+)]
+#[doc(hidden)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryKind {
     Semantic,

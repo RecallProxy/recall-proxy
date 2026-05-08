@@ -12,6 +12,10 @@ agent code.
 
 ## Workspace Layout
 
+> **Note:** The root `src/` directory is deprecated. All active development
+> targets the `crates/` workspace hierarchy. See `src/DEPRECATED.md` for
+> migration guidance.
+
 ```text
 .
 ├── Cargo.toml
@@ -26,11 +30,17 @@ agent code.
 
 ## Crate Responsibilities
 
-- **recall-proxy-core**: Provider-agnostic memory abstractions (`ContextEngine` trait,
-  `MemoryRecord`, `MemoryProvider`), shared domain types (`MemoryQuery`, `ContextSnippet`,
-  `MemoryType`), and event delivery contracts.
-- **recall-proxy-config**: Serde-serializable configuration for memory routes
-  and provider wiring (`GatewayConfig`, `MemoryRouteConfig`, `EngineProviderConfig`).
+- **recall-proxy-core**: Unified `ContextEngine` trait and `ContextEngineType`
+  enum (Structural, Temporal, Semantic, Graph). Provider-facing traits
+  (`MemoryProvider`, `SemanticMemoryProvider`, etc.), shared domain types
+  (`ContextRequest`, `ContextSnippet`, `EngineLookupResult`), event delivery
+  contracts, and memory artifact types (`MemoryRecord`, `RawTranscript`,
+  `DerivedFact`).
+- **recall-proxy-config**: `RecallProxyConfig` — the canonical provider-driven
+  config model matching the YAML examples (providers, read_pipelines,
+  write_pipelines). Also includes `ContextPipelineConfig` for context assembly
+  pipeline settings. Legacy `GatewayConfig` / `ProviderConfig` types are
+  deprecated with a migration path via `to_canonical()`.
 - **recall-proxy-gateway**: `ContextGateway` (per-engine-type orchestration) and
   `ContextMemoryGateway` (unified `ContextEngine` trait orchestration) with ingest
   routing and context assembly.
@@ -164,8 +174,9 @@ curl -X POST http://localhost:8080/ingest \
 ## Project Status
 
 Active foundation stage: core abstractions, orchestration scaffolding, and
-test-backed flows are in place. Next iterations can add concrete provider
-adapters and integration tests against simulated endpoints.
+test-backed flows are in place. The provider config model and engine type
+abstractions have been unified across the workspace. Next iterations can add
+concrete provider adapters and integration tests against simulated endpoints.
 
 ## License
 
