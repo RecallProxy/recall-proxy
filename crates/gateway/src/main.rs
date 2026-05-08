@@ -1,5 +1,5 @@
-use axum::{Json, Router, routing::get};
-use serde::Serialize;
+use axum::{Json, Router, routing::{get, post}};
+use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tracing::info;
 
@@ -9,10 +9,30 @@ struct HealthResponse {
     service: &'static str,
 }
 
+#[derive(Deserialize)]
+struct IngestRequest {
+    interaction_id: String,
+    content: String,
+}
+
+#[derive(Serialize)]
+struct IngestResponse {
+    status: &'static str,
+    interaction_id: String,
+}
+
 async fn health() -> Json<HealthResponse> {
     Json(HealthResponse {
         status: "ok",
         service: "recall-proxy-gateway",
+    })
+}
+
+async fn ingest(Json(payload): Json<IngestRequest>) -> Json<IngestResponse> {
+    info!("ingesting interaction: {}", payload.interaction_id);
+    Json(IngestResponse {
+        status: "stored",
+        interaction_id: payload.interaction_id,
     })
 }
 
@@ -33,7 +53,9 @@ async fn main() {
         .init();
 
     let addr = bind_address();
-    let app = Router::new().route("/health", get(health));
+    let app = Router::new()
+        .route("/health", get(health))
+        .route("/ingest", post(ingest));
 
     info!("starting RecallProxy gateway on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap_or_else(|e| {

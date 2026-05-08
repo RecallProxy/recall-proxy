@@ -3,11 +3,29 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 
+pub use recall_proxy_core::context::ContextEngineType;
+
+#[deprecated(
+    since = "0.1.0",
+    note = "use ContextEngineType from recall_proxy_core::context instead"
+)]
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MemoryType {
     Structural,
     Temporal,
     Semantic,
+}
+
+#[allow(deprecated)]
+impl MemoryType {
+    fn as_context_engine_type(&self) -> ContextEngineType {
+        match self {
+            MemoryType::Structural => ContextEngineType::Structural,
+            MemoryType::Temporal => ContextEngineType::Temporal,
+            MemoryType::Semantic => ContextEngineType::Semantic,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -27,7 +45,7 @@ pub struct MemoryQuery {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContextSnippet {
     pub source: String,
-    pub memory_type: MemoryType,
+    pub engine_type: ContextEngineType,
     pub content: String,
     pub score: Option<f32>,
 }

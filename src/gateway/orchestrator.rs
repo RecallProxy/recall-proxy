@@ -100,7 +100,7 @@ mod tests {
 
     use async_trait::async_trait;
 
-    use crate::domain::{ContextSnippet, EngineError, MemoryPayload, MemoryQuery, MemoryType};
+    use crate::domain::{ContextSnippet, EngineError, MemoryPayload, MemoryQuery, ContextEngineType};
     use crate::engines::{HindsightProcessor, SemanticEngine, StructuralEngine, TemporalEngine};
     use crate::gateway::ContextGateway;
 
@@ -212,7 +212,7 @@ mod tests {
             ingests: Arc::new(AtomicUsize::new(0)),
             snippets: vec![ContextSnippet {
                 source: "graph".to_string(),
-                memory_type: MemoryType::Structural,
+                engine_type: ContextEngineType::Structural,
                 content: "user likes rust".to_string(),
                 score: None,
             }],
@@ -221,7 +221,7 @@ mod tests {
             ingests: Arc::new(AtomicUsize::new(0)),
             snippets: vec![ContextSnippet {
                 source: "timeline".to_string(),
-                memory_type: MemoryType::Temporal,
+                engine_type: ContextEngineType::Temporal,
                 content: "last action was login".to_string(),
                 score: None,
             }],
@@ -230,7 +230,7 @@ mod tests {
             ingests: Arc::new(AtomicUsize::new(0)),
             snippets: vec![ContextSnippet {
                 source: "vector".to_string(),
-                memory_type: MemoryType::Semantic,
+                engine_type: ContextEngineType::Semantic,
                 content: "related prior solution".to_string(),
                 score: Some(0.95),
             }],
