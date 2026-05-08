@@ -120,6 +120,47 @@ cargo test
 - Read assembly combines context from configured engines.
 - Hindsight pipeline processes interactions in the background.
 
+## End-to-End Testing
+
+The repository includes a Docker Compose-based E2E testing setup with promptfoo for validating the gateway's HTTP surface.
+
+### Prerequisites
+
+- Docker and Docker Compose
+- promptfoo (`npm install -g promptfoo`)
+
+### Running E2E Tests
+
+Start the local environment:
+
+```bash
+cd examples/e2e
+docker-compose up --build
+```
+
+This starts:
+- **gateway**: The RecallProxy gateway service on port 8080
+- **mock-hindsight**: A mock hindsight provider on port 8081
+
+Run the promptfoo tests:
+
+```bash
+promptfoo eval
+```
+
+### Available Endpoints
+
+- `GET /health` - Health check endpoint
+- `POST /ingest` - Ingest interaction data
+
+Example ingest request:
+
+```bash
+curl -X POST http://localhost:8080/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"interaction_id": "test-001", "content": "Test interaction"}'
+```
+
 ## Project Status
 
 Active foundation stage: core abstractions, orchestration scaffolding, and
