@@ -174,11 +174,14 @@ cargo test
 Shipped capabilities:
 
 - `recall-proxy-core` — `ContextEngine` trait, provider abstractions, shared domain types
-- `recall-proxy-config` — `GatewayConfig` / `ProviderConfig` schema
+  (`RetrievalIntent`, `MemoryArtifact`, `MemoryArtifactKind`), serialization contracts
+- `recall-proxy-config` — `RecallProxyConfig` / `ProviderRegistration` schema with
+  intent-aware read pipelines and migration from legacy `GatewayConfig`
 - `recall-proxy-gateway` — `ContextMemoryGateway` with ingest routing and context assembly
 - `recall-proxy-mcp-server` — HTTP server (`/ingest`, `/retrieve`, `/health`) backed by in-memory engines
 - `tests/integration.rs` — end-to-end smoke tests covering the MVP ingest-to-retrieve path
-- `docs/architecture/` — request-flow, configuration, repository-layout, and hindsight-flow docs
+- `docs/architecture/` — request-flow, configuration, repository-layout, hindsight-flow,
+  and multi-memory-model docs
 
 Next iterations: concrete provider adapters, integration tests against simulated endpoints,
 and production-ready backend stores.

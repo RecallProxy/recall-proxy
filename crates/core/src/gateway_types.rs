@@ -3,7 +3,9 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::time::SystemTime;
 
-pub use crate::context::ContextEngineType;
+use serde::{Deserialize, Serialize};
+
+pub use crate::context::{ContextEngineType, RetrievalIntent};
 
 #[deprecated(
     since = "0.1.0",
@@ -35,11 +37,13 @@ pub struct MemoryPayload {
     pub metadata: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryQuery {
     pub session_id: String,
     pub prompt: String,
     pub max_results: usize,
+    #[serde(default)]
+    pub retrieval_intent: RetrievalIntent,
 }
 
 #[derive(Debug, Clone, PartialEq)]

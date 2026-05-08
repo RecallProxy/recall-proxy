@@ -2,6 +2,7 @@ pub mod context_pipeline;
 
 use std::collections::BTreeMap;
 
+use recall_proxy_core::context::RetrievalIntent;
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,11 @@ pub struct ReadProviderRoute {
     pub provider_id: String,
 
     pub capability: String,
+
+    /// Optional retrieval intent filter. When present, this route only
+    /// serves requests whose intent matches (or is a superset of) this value.
+    #[serde(default)]
+    pub intent: Option<RetrievalIntent>,
 
     #[serde(default)]
     pub priority: u32,
@@ -354,5 +360,107 @@ write_pipelines:
         assert!(config.read_pipelines.is_empty());
         assert!(config.write_pipelines.is_empty());
         assert!(config.bind_address.is_none());
+    }
+
+    #[test]
+    fn read_pipeline_with_intent_filter_deserializes() {
+        let yaml = r#"
+providers:
+  - id: episodic_store
+    provider_type: episodic
+    capabilities:
+      - episodic_retrieve
+
+read_pipelines:
+  - id: episodic_lookup
+    providers:
+      - provider_id: episodic_store
+        capability: episodic_retrieve
+        intent: episodic
+        priority: 5
+        enabled: true
+"#;
+
+        let config: RecallProxyConfig =
+            serde_yaml::from_str(yaml).expect("intent-filtered pipeline should deserialize");
+
+        assert_eq!(config.providers.len(), 1);
+        assert_eq!(config.providers[0].provider_type, "episodic");
+        assert_eq!(config.read_pipelines.len(), 1);
+        assert_eq!(config.read_pipelines[0].id, "episodic_lookup");
+        assert_eq!(config.read_pipelines[0].providers.len(), 1);
+        assert_eq!(
+            config.read_pipelines[0].providers[0].intent,
+            Some(RetrievalIntent::Episodic)
+        );
+    }
+
+    #[test]
+    fn read_pipeline_without_intent_filter_defaults_to_none() {
+        let yaml = r#"
+providers:
+  - id: semantic_local
+    provider_type: semantic
+    capabilities:
+      - semantic_search
+
+read_pipelines:
+  - id: default
+    providers:
+      - provider_id: semantic_local
+        capability: semantic_search
+"#;
+
+        let config: RecallProxyConfig =
+            serde_yaml::from_str(yaml).expect("pipeline without intent should deserialize");
+
+        assert_eq!(
+            config.read_pipelines[0].providers[0].intent,
+            None
+        );
+    }
+
+    #[test]
+    fn mixed_intent_serves_all_engine_types() {
+        let yaml = r#"
+providers:
+  - id: semantic_local
+    provider_type: semantic
+    capabilities:
+      - semantic_search
+  - id: graph_engine
+    provider_type: structural
+    capabilities:
+      - graph_neighborhood
+  - id: temporal_store
+    provider_type: temporal
+    capabilities:
+      - timeline_query
+
+read_pipelines:
+  - id: mixed_lookup
+    providers:
+      - provider_id: semantic_local
+        capability: semantic_search
+        intent: mixed
+        priority: 1
+      - provider_id: graph_engine
+        capability: graph_neighborhood
+        intent: mixed
+        priority: 2
+      - provider_id: temporal_store
+        capability: timeline_query
+        intent: mixed
+        priority: 3
+"#;
+
+        let config: RecallProxyConfig =
+            serde_yaml::from_str(yaml).expect("mixed intent pipeline should deserialize");
+
+        assert_eq!(config.read_pipelines.len(), 1);
+        assert_eq!(config.read_pipelines[0].providers.len(), 3);
+        for route in &config.read_pipelines[0].providers {
+            assert_eq!(route.intent, Some(RetrievalIntent::Mixed));
+        }
     }
 }

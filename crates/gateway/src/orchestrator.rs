@@ -253,6 +253,7 @@ mod tests {
             session_id: "s1".to_string(),
             prompt: "how should I solve this?".to_string(),
             max_results: 5,
+            retrieval_intent: recall_proxy_core::context::RetrievalIntent::Mixed,
         };
 
         let snippets = gateway

@@ -109,6 +109,7 @@ pub async fn context(
         session_id: payload.session_id,
         prompt: payload.prompt,
         max_results: payload.max_results,
+        retrieval_intent: recall_proxy_core::context::RetrievalIntent::Mixed,
     };
 
     match state.gateway.assemble_context(query).await {
@@ -118,7 +119,7 @@ pub async fn context(
                     .into_iter()
                     .map(|s| ContextSnippet {
                         source: s.source,
-                        memory_type: format!("{:?}", s.memory_type),
+                        memory_type: format!("{:?}", s.engine_type),
                         content: s.content,
                         score: s.score,
                     })

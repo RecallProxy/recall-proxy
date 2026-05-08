@@ -3,6 +3,7 @@
 //! These tests verify the end-to-end flow: ingest -> retrieval through
 //! the MCP server and gateway, using in-memory engine providers.
 
+use recall_proxy_core::context::RetrievalIntent;
 use recall_proxy_core::engine::ContextEngine;
 use recall_proxy_core::gateway_types::MemoryQuery;
 use recall_proxy_core::memory::{MemoryProviderKind, MemoryRecord};
@@ -55,6 +56,7 @@ async fn ingest_and_retrieve_through_gateway() {
             session_id: "integration-test".to_string(),
             prompt: "integration-test".to_string(),
             max_results: 10,
+            retrieval_intent: RetrievalIntent::Mixed,
         })
         .await
         .unwrap();
@@ -90,6 +92,7 @@ async fn gateway_ingest_routes_to_structural_and_temporal() {
             session_id: "session-1".to_string(),
             prompt: "session-1".to_string(),
             max_results: 10,
+            retrieval_intent: RetrievalIntent::Mixed,
         })
         .await
         .unwrap();
@@ -106,6 +109,7 @@ async fn assemble_context_returns_empty_when_no_engines() {
             session_id: "empty".to_string(),
             prompt: "empty".to_string(),
             max_results: 10,
+            retrieval_intent: RetrievalIntent::Mixed,
         })
         .await
         .unwrap();
@@ -166,6 +170,7 @@ async fn in_memory_engine_stores_and_retrieves_records() {
             session_id: "ns".to_string(),
             prompt: "".to_string(),
             max_results: 10,
+            retrieval_intent: RetrievalIntent::Mixed,
         })
         .await
         .unwrap();

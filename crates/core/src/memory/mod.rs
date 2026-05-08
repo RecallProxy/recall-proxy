@@ -92,15 +92,31 @@ pub struct ProviderWritePayload {
 }
 
 /// Provider payload shape, constrained by memory class.
+///
+/// The `episodic` variant was added to support raw episode ingestion
+/// before any hindsight extraction occurs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ProviderWriteBody {
+    Episodic { transcript: RawTranscript },
     Temporal { transcript: RawTranscript },
     Structural { facts: Vec<DerivedFact> },
     Semantic {
         transcript: RawTranscript,
         facts: Vec<DerivedFact>,
     },
+}
+
+impl ProviderWriteBody {
+    /// Return the canonical artifact kind this payload represents.
+    pub fn artifact_kind(&self) -> crate::context::MemoryArtifactKind {
+        match self {
+            ProviderWriteBody::Episodic { .. } => crate::context::MemoryArtifactKind::Episodic,
+            ProviderWriteBody::Temporal { .. } => crate::context::MemoryArtifactKind::Temporal,
+            ProviderWriteBody::Structural { .. } => crate::context::MemoryArtifactKind::Structural,
+            ProviderWriteBody::Semantic { .. } => crate::context::MemoryArtifactKind::Semantic,
+        }
+    }
 }
 
 #[deprecated(
@@ -228,5 +244,36 @@ mod tests {
 
         assert_eq!(record.namespace, "session-1");
         assert_eq!(record.content, "hello world");
+    }
+
+    #[test]
+    fn episodic_payload_identifies_correct_artifact_kind() {
+        let payload = ProviderWritePayload {
+            provider: MemoryProviderKind::Temporal,
+            session_id: "session-1".to_string(),
+            dedupe_key: Some("turn-1".to_string()),
+            timestamp: Utc.with_ymd_and_hms(2026, 5, 7, 7, 2, 0).unwrap(),
+            payload: ProviderWriteBody::Episodic {
+                transcript: sample_transcript(),
+            },
+        };
+
+        assert_eq!(payload.payload.artifact_kind(), crate::context::MemoryArtifactKind::Episodic);
+    }
+
+    #[test]
+    fn provider_write_body_serializes_with_discriminator() {
+        let payload = ProviderWritePayload {
+            provider: MemoryProviderKind::Structural,
+            session_id: "s1".to_string(),
+            dedupe_key: None,
+            timestamp: Utc.with_ymd_and_hms(2026, 5, 7, 7, 2, 0).unwrap(),
+            payload: ProviderWriteBody::Structural {
+                facts: vec![sample_fact(0.95)],
+            },
+        };
+
+        let json = serde_json::to_string(&payload.payload).expect("should serialize");
+        assert!(json.contains(r#""kind":"structural""#));
     }
 }

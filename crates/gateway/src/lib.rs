@@ -197,6 +197,7 @@ mod tests {
                 session_id: "s1".to_string(),
                 prompt: "what do we know?".to_string(),
                 max_results: 5,
+                retrieval_intent: recall_proxy_core::context::RetrievalIntent::Mixed,
             })
             .await
             .expect("assembly should succeed");

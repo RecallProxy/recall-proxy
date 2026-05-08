@@ -5,6 +5,7 @@ use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
 use recall_proxy_core::engine::{ContextEngine, EngineError};
+use recall_proxy_core::context::ContextEngineType;
 use recall_proxy_core::gateway_types::{ContextSnippet, MemoryQuery};
 use recall_proxy_core::memory::{MemoryProviderKind, MemoryRecord};
 
@@ -51,16 +52,10 @@ impl ContextEngine for InMemoryEngine {
             for record in records {
                 results.push(ContextSnippet {
                     source: format!("{:?}", self.memory_type),
-                    memory_type: match self.memory_type {
-                        MemoryProviderKind::Semantic => {
-                            recall_proxy_core::gateway_types::MemoryType::Semantic
-                        }
-                        MemoryProviderKind::Structural => {
-                            recall_proxy_core::gateway_types::MemoryType::Structural
-                        }
-                        MemoryProviderKind::Temporal => {
-                            recall_proxy_core::gateway_types::MemoryType::Temporal
-                        }
+                    engine_type: match self.memory_type {
+                        MemoryProviderKind::Semantic => ContextEngineType::Semantic,
+                        MemoryProviderKind::Structural => ContextEngineType::Structural,
+                        MemoryProviderKind::Temporal => ContextEngineType::Temporal,
                     },
                     content: record.content.clone(),
                     score: Some(1.0),
@@ -91,6 +86,7 @@ mod tests {
                 session_id: "ns-1".to_string(),
                 prompt: "ns-1".to_string(),
                 max_results: 10,
+                retrieval_intent: recall_proxy_core::context::RetrievalIntent::Mixed,
             })
             .await
             .unwrap();
