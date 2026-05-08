@@ -6,7 +6,8 @@
 use std::sync::Arc;
 
 use recall_proxy_core::engine::ContextEngine;
-use recall_proxy_core::gateway_types::{MemoryQuery, MemoryType};
+use recall_proxy_core::context::ContextEngineType;
+use recall_proxy_core::gateway_types::MemoryQuery;
 use recall_proxy_core::memory::{MemoryProviderKind, MemoryRecord};
 use recall_proxy_memory::SqliteMemoryEngine;
 use sqlx::SqlitePool;
@@ -65,7 +66,7 @@ async fn full_ingest_and_query_flow() {
         "user prefers Rust for systems programming"
     );
     assert_eq!(results[0].source, "integration-test");
-    assert_eq!(results[0].memory_type, MemoryType::Semantic);
+    assert_eq!(results[0].engine_type, ContextEngineType::Semantic);
     assert_eq!(results[0].score, Some(1.0));
 }
 

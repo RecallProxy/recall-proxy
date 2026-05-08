@@ -3,6 +3,7 @@
 use async_trait::async_trait;
 use chrono::Utc;
 use recall_proxy_core::engine::{ContextEngine, EngineError};
+use recall_proxy_core::context::ContextEngineType;
 use recall_proxy_core::gateway_types::{ContextSnippet, MemoryQuery};
 use recall_proxy_core::memory::{MemoryProviderKind, MemoryRecord};
 use sqlx::Row;
@@ -137,16 +138,16 @@ impl ContextEngine for SqliteMemoryEngine {
         let snippets: Vec<ContextSnippet> = rows
             .into_iter()
             .map(|(namespace, content, memory_type_str, _created_at)| {
-                let memory_type = match memory_type_str.as_str() {
-                    "Structural" => recall_proxy_core::gateway_types::MemoryType::Structural,
-                    "Temporal" => recall_proxy_core::gateway_types::MemoryType::Temporal,
-                    "Semantic" => recall_proxy_core::gateway_types::MemoryType::Semantic,
-                    _ => recall_proxy_core::gateway_types::MemoryType::Semantic,
+                let engine_type = match memory_type_str.as_str() {
+                    "Structural" => ContextEngineType::Structural,
+                    "Temporal" => ContextEngineType::Temporal,
+                    "Semantic" => ContextEngineType::Semantic,
+                    _ => ContextEngineType::Semantic,
                 };
 
                 ContextSnippet {
                     source: namespace.clone(),
-                    memory_type,
+                    engine_type,
                     content,
                     score: Some(1.0),
                 }
@@ -166,7 +167,7 @@ impl ContextEngine for SqliteMemoryEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use recall_proxy_core::gateway_types::MemoryType;
+    use recall_proxy_core::context::ContextEngineType;
 
     async fn temp_pool() -> SqlitePool {
         let pool = SqlitePool::connect(":memory:")
@@ -213,7 +214,7 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].content, "user prefers rust");
         assert_eq!(results[0].source, "test-session");
-        assert_eq!(results[0].memory_type, MemoryType::Semantic);
+        assert_eq!(results[0].engine_type, ContextEngineType::Semantic);
         assert_eq!(results[0].score, Some(1.0));
     }
 
