@@ -77,11 +77,12 @@ mod tests {
     use recall_proxy_core::engine::{ContextEngine, EngineError};
     use recall_proxy_core::gateway_types::{ContextSnippet, MemoryQuery};
     use recall_proxy_core::memory::{MemoryProviderKind, MemoryRecord};
+    use recall_proxy_core::context::ContextEngineType;
 
     use crate::ContextMemoryGateway;
 
     struct InMemoryEngine {
-        memory_type: MemoryProviderKind,
+        engine_type: ContextEngineType,
         writes: Arc<Mutex<Vec<MemoryRecord>>>,
         query_results: Vec<ContextSnippet>,
     }
@@ -89,7 +90,7 @@ mod tests {
     #[async_trait]
     impl ContextEngine for InMemoryEngine {
         fn memory_type(&self) -> MemoryProviderKind {
-            self.memory_type
+            self.engine_type.into()
         }
 
         async fn write(&self, record: MemoryRecord) -> Result<(), EngineError> {
@@ -111,17 +112,17 @@ mod tests {
         let temporal_writes = Arc::new(Mutex::new(Vec::new()));
 
         let structural = Arc::new(InMemoryEngine {
-            memory_type: MemoryProviderKind::Structural,
+            engine_type: ContextEngineType::Structural,
             writes: Arc::clone(&structural_writes),
             query_results: vec![],
         });
         let temporal = Arc::new(InMemoryEngine {
-            memory_type: MemoryProviderKind::Temporal,
+            engine_type: ContextEngineType::Temporal,
             writes: Arc::clone(&temporal_writes),
             query_results: vec![],
         });
         let semantic = Arc::new(InMemoryEngine {
-            memory_type: MemoryProviderKind::Semantic,
+            engine_type: ContextEngineType::Semantic,
             writes: Arc::new(Mutex::new(Vec::new())),
             query_results: vec![],
         });
@@ -160,31 +161,31 @@ mod tests {
     #[tokio::test]
     async fn gateway_assembly_combines_results_from_registered_engines() {
         let semantic = Arc::new(InMemoryEngine {
-            memory_type: MemoryProviderKind::Semantic,
+            engine_type: ContextEngineType::Semantic,
             writes: Arc::new(Mutex::new(Vec::new())),
             query_results: vec![ContextSnippet {
                 source: "semantic_engine".to_string(),
-                memory_type: recall_proxy_core::gateway_types::MemoryType::Semantic,
+                engine_type: ContextEngineType::Semantic,
                 content: "semantic hit".to_string(),
                 score: None,
             }],
         });
         let structural = Arc::new(InMemoryEngine {
-            memory_type: MemoryProviderKind::Structural,
+            engine_type: ContextEngineType::Structural,
             writes: Arc::new(Mutex::new(Vec::new())),
             query_results: vec![ContextSnippet {
                 source: "structural_engine".to_string(),
-                memory_type: recall_proxy_core::gateway_types::MemoryType::Structural,
+                engine_type: ContextEngineType::Structural,
                 content: "structural hit".to_string(),
                 score: None,
             }],
         });
         let temporal = Arc::new(InMemoryEngine {
-            memory_type: MemoryProviderKind::Temporal,
+            engine_type: ContextEngineType::Temporal,
             writes: Arc::new(Mutex::new(Vec::new())),
             query_results: vec![ContextSnippet {
                 source: "temporal_engine".to_string(),
-                memory_type: recall_proxy_core::gateway_types::MemoryType::Temporal,
+                engine_type: ContextEngineType::Temporal,
                 content: "temporal hit".to_string(),
                 score: None,
             }],
