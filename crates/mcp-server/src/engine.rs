@@ -41,6 +41,7 @@ fn kind_to_engine_type(kind: MemoryProviderKind) -> ContextEngineType {
         MemoryProviderKind::Semantic => ContextEngineType::Semantic,
         MemoryProviderKind::Structural => ContextEngineType::Structural,
         MemoryProviderKind::Temporal => ContextEngineType::Temporal,
+        MemoryProviderKind::Episodic => ContextEngineType::Graph,
     }
 }
 

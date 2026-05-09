@@ -47,21 +47,17 @@ impl ContextEngine for InMemoryEngine {
     async fn query(&self, _query: MemoryQuery) -> Result<Vec<ContextSnippet>, EngineError> {
         let data = self.data.read().unwrap();
         let mut results = Vec::new();
+        let engine_type = match self.memory_type {
+            MemoryProviderKind::Semantic => recall_proxy_core::context::ContextEngineType::Semantic,
+            MemoryProviderKind::Structural => recall_proxy_core::context::ContextEngineType::Structural,
+            MemoryProviderKind::Temporal => recall_proxy_core::context::ContextEngineType::Temporal,
+            MemoryProviderKind::Episodic => recall_proxy_core::context::ContextEngineType::Graph,
+        };
         for (_namespace, records) in data.iter() {
             for record in records {
                 results.push(ContextSnippet {
                     source: format!("{:?}", self.memory_type),
-                    memory_type: match self.memory_type {
-                        MemoryProviderKind::Semantic => {
-                            recall_proxy_core::gateway_types::MemoryType::Semantic
-                        }
-                        MemoryProviderKind::Structural => {
-                            recall_proxy_core::gateway_types::MemoryType::Structural
-                        }
-                        MemoryProviderKind::Temporal => {
-                            recall_proxy_core::gateway_types::MemoryType::Temporal
-                        }
-                    },
+                    engine_type,
                     content: record.content.clone(),
                     score: Some(1.0),
                 });

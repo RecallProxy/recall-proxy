@@ -30,13 +30,49 @@ impl McpServerState {
         Self { gateway, engines }
     }
 
-    /// Create a default state with semantic, structural, and temporal engines.
+    /// Create a default state with semantic, structural, temporal, and episodic engines.
     pub fn default_state() -> Self {
         let engines: Vec<Arc<InMemoryEngine>> = vec![
             Arc::new(InMemoryEngine::new(MemoryProviderKind::Semantic)),
             Arc::new(InMemoryEngine::new(MemoryProviderKind::Structural)),
             Arc::new(InMemoryEngine::new(MemoryProviderKind::Temporal)),
+            Arc::new(InMemoryEngine::new(MemoryProviderKind::Episodic)),
         ];
         Self::new(engines)
+    }
+
+    /// Build state from a `RecallProxyConfig` using the memory crate factory.
+    ///
+    /// This validates that all provider routes have registered providers
+    /// and returns an error if startup validation fails.
+    pub async fn from_config(
+        config: &recall_proxy_config::RecallProxyConfig,
+    ) -> Result<Self, String> {
+        // Validate provider routes first
+        let validation = recall_proxy_memory::factory::validate_provider_routes(config);
+        if let Err(e) = validation {
+            return Err(e.to_string());
+        }
+
+        // Create engines from config
+        let providers = recall_proxy_memory::factory::create_all_providers(config)
+            .await
+            .map_err(|e| format!("failed to create providers: {e}"))?;
+
+        // Convert providers to InMemoryEngine instances for the state
+        let mut engines = Vec::new();
+        for provider in providers {
+            // For the MVP, all in-memory providers are wrapped as InMemoryEngine
+            // since the factory creates trait objects
+            let memory_type = provider.memory_type();
+            let in_mem = InMemoryEngine::new(memory_type);
+            engines.push(Arc::new(in_mem));
+        }
+
+        if engines.is_empty() {
+            return Err("no enabled providers configured".to_string());
+        }
+
+        Ok(Self::new(engines))
     }
 }

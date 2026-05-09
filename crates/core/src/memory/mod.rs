@@ -67,6 +67,7 @@ pub enum MemoryProviderKind {
     Semantic,
     Structural,
     Temporal,
+    Episodic,
 }
 
 #[allow(deprecated)]
@@ -76,7 +77,7 @@ impl From<ContextEngineType> for MemoryProviderKind {
             ContextEngineType::Structural => MemoryProviderKind::Structural,
             ContextEngineType::Temporal => MemoryProviderKind::Temporal,
             ContextEngineType::Semantic => MemoryProviderKind::Semantic,
-            ContextEngineType::Graph => MemoryProviderKind::Semantic,
+            ContextEngineType::Graph => MemoryProviderKind::Episodic,
         }
     }
 }
@@ -113,6 +114,7 @@ pub enum MemoryKind {
     Semantic,
     Structural,
     Temporal,
+    Episodic,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

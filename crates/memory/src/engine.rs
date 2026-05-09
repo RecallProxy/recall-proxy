@@ -78,6 +78,7 @@ impl SqliteMemoryEngine {
             MemoryProviderKind::Semantic => "semantic",
             MemoryProviderKind::Structural => "structural",
             MemoryProviderKind::Temporal => "temporal",
+            MemoryProviderKind::Episodic => "episodic",
         }
     }
 }

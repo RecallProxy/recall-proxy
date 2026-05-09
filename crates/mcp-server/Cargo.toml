@@ -10,8 +10,10 @@ axum = "0.7"
 recall-proxy-core = { path = "../core" }
 recall-proxy-gateway = { path = "../gateway" }
 recall-proxy-config = { path = "../config" }
+recall-proxy-memory = { path = "../memory" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
 tokio = { version = "1", features = ["sync", "macros", "rt", "rt-multi-thread", "net", "signal"] }
 tower-http = { version = "0.5", features = ["cors"] }
 tracing = "0.1"

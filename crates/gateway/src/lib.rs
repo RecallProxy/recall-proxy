@@ -55,6 +55,7 @@ impl ContextMemoryGateway {
         let mut contexts = Vec::new();
 
         for memory_type in [
+            MemoryProviderKind::Episodic,
             MemoryProviderKind::Semantic,
             MemoryProviderKind::Structural,
             MemoryProviderKind::Temporal,

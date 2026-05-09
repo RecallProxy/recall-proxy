@@ -118,7 +118,7 @@ pub async fn context(
                     .into_iter()
                     .map(|s| ContextSnippet {
                         source: s.source,
-                        memory_type: format!("{:?}", s.memory_type),
+                        memory_type: format!("{:?}", s.engine_type),
                         content: s.content,
                         score: s.score,
                     })

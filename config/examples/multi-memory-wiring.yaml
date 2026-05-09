@@ -1,0 +1,113 @@
+# Multi-memory provider configuration for RecallProxy.
+#
+# Demonstrates wiring all four in-memory engine types (episodic, semantic,
+# temporal, structural) into read and write pipelines.
+
+bind_address: "127.0.0.1:8081"
+
+providers:
+  # Episodic engine — session-bound, time-windowed memory
+  - id: episodic_default
+    provider_type: episodic
+    enabled: true
+    capabilities:
+      - session_memory
+    settings:
+      max_age_minutes: "1440"
+      max_entries_per_session: "10000"
+
+  # Semantic engine — keyword-based search
+  - id: semantic_default
+    provider_type: semantic
+    enabled: true
+    capabilities:
+      - semantic_search
+    settings:
+      max_results: "50"
+
+  # Temporal engine — chronological timeline
+  - id: temporal_default
+    provider_type: temporal
+    enabled: true
+    capabilities:
+      - timeline
+    settings:
+      max_entries: "100000"
+
+  # Structural engine — relationship/fact storage
+  - id: structural_default
+    provider_type: structural
+    enabled: true
+    capabilities:
+      - graph_neighborhood
+    settings:
+      max_facts: "50000"
+
+read_pipelines:
+  # Default read pipeline — queries all engines in priority order
+  - id: default
+    providers:
+      - provider_id: semantic_default
+        capability: semantic_search
+        priority: 10
+        weight: 100
+        enabled: true
+      - provider_id: structural_default
+        capability: graph_neighborhood
+        priority: 8
+        weight: 80
+        enabled: true
+      - provider_id: temporal_default
+        capability: timeline
+        priority: 5
+        weight: 50
+        enabled: true
+      - provider_id: episodic_default
+        capability: session_memory
+        priority: 3
+        weight: 30
+        enabled: true
+
+  # Semantic-only read pipeline (fallback)
+  - id: semantic_fallback
+    providers:
+      - provider_id: semantic_default
+        capability: semantic_search
+        priority: 1
+        weight: 100
+        enabled: true
+
+write_pipelines:
+  # On-request write — persists ingested data to all engines
+  - id: on_request
+    trigger: on_request
+    sinks:
+      - provider_id: episodic_default
+        capability: session_memory
+        enabled: true
+        criticality: required
+      - provider_id: semantic_default
+        capability: semantic_search
+        enabled: true
+        criticality: best_effort
+      - provider_id: temporal_default
+        capability: timeline
+        enabled: true
+        criticality: required
+      - provider_id: structural_default
+        capability: graph_neighborhood
+        enabled: true
+        criticality: best_effort
+
+  # On-response write — archives response context
+  - id: on_response
+    trigger: on_response
+    sinks:
+      - provider_id: semantic_default
+        capability: semantic_search
+        enabled: true
+        criticality: best_effort
+      - provider_id: temporal_default
+        capability: timeline
+        enabled: true
+        criticality: required

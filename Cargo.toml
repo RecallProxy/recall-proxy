@@ -5,6 +5,7 @@ members = [
     "crates/gateway",
     "crates/hindsight-worker",
     "crates/mcp-server",
+    "crates/memory",
 ]
 resolver = "2"
 
