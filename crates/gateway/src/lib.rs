@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 /// Generic gateway over a unified ContextEngine trait.
 pub struct ContextMemoryGateway {
-    engines: HashMap<MemoryProviderKind, Arc<dyn ContextEngine>>,
+    pub engines: HashMap<MemoryProviderKind, Arc<dyn ContextEngine>>,
 }
 
 impl ContextMemoryGateway {

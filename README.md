@@ -20,7 +20,8 @@ agent code.
 │   ├── core           # Provider abstractions and domain types
 │   ├── gateway        # Ingest routing and context assembly
 │   ├── hindsight-worker  # Async background extraction pipeline
-│   └── mcp-server     # MCP server with in-memory engines for the MVP path
+│   ├── mcp-server     # MCP server with in-memory engines for the MVP path
+│   └── memory         # SQLite-backed memory provider (ContextEngine impl)
 └── docs
     └── architecture
 ```
@@ -40,27 +41,35 @@ agent code.
 - **recall-proxy-mcp-server**: HTTP MCP server exposing `/ingest` and `/retrieve`
   endpoints backed by in-memory `ContextEngine` providers. Used for MVP
   verification and local development.
+- **recall-proxy-memory**: SQLite-backed `ContextEngine` implementation.
+  Provides a concrete, file-based memory engine for local development and CI
+  verification. Implements `ContextEngine` with full ingest and query support.
 
 ## Architecture Milestones (Initial Implementation)
 
 1. **ContextEngine trait system** (`crates/core/src/`)
-   - Async trait for engine providers with typed `write` and `query` operations.
-   - Engine-neutral `MemoryType` enum for semantic, structural, and temporal memory.
+    - Async trait for engine providers with typed `write` and `query` operations.
+    - Engine-neutral `ContextEngineType` enum for semantic, structural, temporal, and graph memory.
 
 2. **Async hindsight extraction pipeline** (`crates/hindsight-worker/src/`)
-   - Background queue with `tokio::mpsc`.
-   - Pluggable `HindsightExtractor` trait for converting raw interactions into
-     structural and temporal records without blocking request flow.
+    - Background queue with `tokio::mpsc`.
+    - Pluggable `HindsightExtractor` trait for converting raw interactions into
+      structural and temporal records without blocking request flow.
 
 3. **Multi-engine orchestration config schema** (`crates/config/src/`)
-   - Serde-serializable configuration for memory routes and provider wiring.
-   - Enables provider swapping via configuration, not gateway refactors.
+    - Serde-serializable configuration for memory routes and provider wiring.
+    - Enables provider swapping via configuration, not gateway refactors.
 
 4. **Gateway orchestration** (`crates/gateway/src/`)
-   - Ingest routing for structural + temporal writes.
-   - Read assembly across registered engine providers.
-   - Two complementary orchestrators: `ContextGateway` (per-engine-type traits)
-     and `ContextMemoryGateway` (unified `ContextEngine` trait).
+    - Ingest routing for structural + temporal writes.
+    - Read assembly across registered engine providers.
+    - Two complementary orchestrators: `ContextGateway` (per-engine-type traits)
+      and `ContextMemoryGateway` (unified `ContextEngine` trait).
+
+5. **SQLite-backed memory provider** (`crates/memory/src/`)
+    - Concrete `ContextEngine` implementation with real persistence.
+    - Provider factory for creating engines from `ProviderRegistration` config.
+    - Suitable for local development and CI verification.
 
 ## MVP Happy Path: Ingest to Retrieval
 
@@ -134,6 +143,86 @@ curl http://127.0.0.1:8080/health
 # {"status":"ok","service":"recall-proxy-gateway"}
 ```
 
+## Multi-Memory Flow
+
+The full multi-memory flow traces: **ingest → episodic capture → consolidation → intent-aware retrieval**.
+
+1. **Ingest** — `POST /ingest` writes to structural and temporal engines in parallel.
+2. **Episodic capture** — A `HindsightTaskEnqueued` event triggers the hindsight pipeline, which normalizes, extracts facts, and writes consolidated records to the semantic engine.
+3. **Consolidation** — Derived facts from the hindsight worker become available in the semantic engine.
+4. **Intent-aware retrieval** — `POST /retrieve` queries all three engines (semantic, structural, temporal), merges results by precedence, deduplicates, applies token budget, and renders prompt-ready context.
+
+See `docs/architecture/multi-memory-flow.md` for the full architectural description.
+
+## Rollout Plan
+
+### Phase 1: MVP Verification (Current)
+- In-memory engines behind the MCP server for local development.
+- SQLite-backed engine in `crates/memory` for real persistence without external dependencies.
+- Integration tests covering the ingest → retrieve path.
+
+### Phase 2: Provider Expansion
+- Add concrete provider adapters (e.g., PostgreSQL, Redis, vector databases).
+- Each adapter implements `ContextEngine` trait from `recall-proxy-core`.
+- Configuration-driven provider selection via `RecallProxyConfig`.
+
+### Phase 3: Production Readiness
+- Hindsight pipeline with durable outbox and retry semantics.
+- Streaming response capture with non-blocking handoff.
+- Token budgeting and deterministic merge/synthesis rules.
+
+## Exercising the Flow Locally
+
+### 1. Start the MCP Server
+
+```bash
+cargo run -p recall-proxy-mcp-server
+```
+
+### 2. Ingest a Record
+
+```bash
+curl -X POST http://127.0.0.1:8081/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "demo-session",
+    "namespace": "user-preferences",
+    "content": "user prefers Rust"
+  }'
+```
+
+### 3. Retrieve Context
+
+```bash
+curl -X POST http://127.0.0.1:8081/retrieve \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "demo-session",
+    "prompt": "user-preferences",
+    "max_results": 10
+  }'
+```
+
+### 4. Verify Health
+
+```bash
+curl http://127.0.0.1:8081/health
+# ok
+```
+
+### 5. Run Integration Tests
+
+```bash
+cargo test
+```
+
+This exercises:
+- Gateway ingest routing to structural and temporal engines
+- Context assembly combining results from all engines
+- SQLite provider ingest and query flows
+- Missing engine error handling
+- Configuration parsing
+
 ## Docker
 
 You can build and run the gateway server using Docker for local development.
@@ -177,8 +266,9 @@ Shipped capabilities:
 - `recall-proxy-config` — `GatewayConfig` / `ProviderConfig` schema
 - `recall-proxy-gateway` — `ContextMemoryGateway` with ingest routing and context assembly
 - `recall-proxy-mcp-server` — HTTP server (`/ingest`, `/retrieve`, `/health`) backed by in-memory engines
+- `recall-proxy-memory` — SQLite-backed `ContextEngine` implementation with provider factory
 - `tests/integration.rs` — end-to-end smoke tests covering the MVP ingest-to-retrieve path
-- `docs/architecture/` — request-flow, configuration, repository-layout, and hindsight-flow docs
+- `docs/architecture/` — request-flow, configuration, repository-layout, hindsight-flow, and multi-memory-flow docs
 
 Next iterations: concrete provider adapters, integration tests against simulated endpoints,
 and production-ready backend stores.
